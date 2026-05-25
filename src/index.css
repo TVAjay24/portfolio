@@ -1,0 +1,500 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Orbitron:wght@400;500;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Colors */
+  --bg-darker: #020408;
+  --bg-dark: #070d19;
+  --bg-panel: rgba(8, 15, 30, 0.75);
+  --bg-panel-solid: #091225;
+  --accent-blue: #00d2ff;
+  --accent-purple: #bd00ff;
+  --accent-cyan: #00ffc4;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #475569;
+  --border-color: rgba(0, 210, 255, 0.25);
+  --border-glow: rgba(0, 210, 255, 0.5);
+
+  /* Glows */
+  --neon-glow-blue: 0 0 10px rgba(0, 210, 255, 0.5), 0 0 20px rgba(0, 210, 255, 0.2);
+  --neon-glow-purple: 0 0 10px rgba(189, 0, 255, 0.5), 0 0 20px rgba(189, 0, 255, 0.2);
+  --neon-glow-cyan: 0 0 10px rgba(0, 255, 196, 0.5), 0 0 20px rgba(0, 255, 196, 0.2);
+  
+  /* Fonts */
+  --font-hud: 'Orbitron', sans-serif;
+  --font-body: 'Space Grotesk', sans-serif;
+  --font-jp: 'Noto Sans JP', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-purple) var(--bg-darker);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-darker);
+  border-left: 1px solid rgba(0, 210, 255, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--accent-blue), var(--accent-purple));
+  border-radius: 4px;
+  box-shadow: 0 0 8px var(--accent-blue);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--accent-cyan), var(--accent-purple));
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: var(--bg-darker);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+}
+
+body {
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  color: var(--text-primary);
+}
+
+/* Futuristic Scanline Overlay with Holographic Screen Flicker */
+body::before {
+  content: " ";
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+  z-index: 99999;
+  background-size: 100% 4px, 6px 100%;
+  pointer-events: none;
+  animation: hologram-flicker 0.25s infinite;
+}
+
+@keyframes hologram-flicker {
+  0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% {
+    opacity: 0.99;
+    filter: hue-rotate(0deg) saturate(1);
+  }
+  20%, 21.999%, 63%, 63.999%, 65%, 69.999% {
+    opacity: 0.91;
+    filter: hue-rotate(4deg) saturate(1.2) contrast(1.1);
+  }
+}
+
+/* Grid overlay background */
+.cyber-grid {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(rgba(0, 210, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 210, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: center;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.cyber-grid::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 50% 50%, transparent 10%, var(--bg-darker) 85%);
+  pointer-events: none;
+}
+
+/* Text glow styles */
+.text-glow-blue {
+  text-shadow: var(--neon-glow-blue);
+}
+
+.text-glow-purple {
+  text-shadow: var(--neon-glow-purple);
+}
+
+.text-glow-cyan {
+  text-shadow: var(--neon-glow-cyan);
+}
+
+/* Custom Anime HUD Panel Layout */
+.hud-panel {
+  position: relative;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(12px);
+  padding: 24px;
+  border-radius: 4px;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: inset 0 0 15px rgba(0, 210, 255, 0.05);
+}
+
+/* Corner Bracket Accents */
+.hud-panel::before, .hud-panel::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: var(--accent-blue);
+  border-style: solid;
+  transition: all 0.3s ease;
+}
+
+/* Top left and top right brackets */
+.hud-panel::before {
+  top: -1px;
+  left: -1px;
+  border-width: 2px 0 0 2px;
+}
+
+.hud-panel::after {
+  top: -1px;
+  right: -1px;
+  border-width: 2px 2px 0 0;
+}
+
+/* Bottom brackets (can use a nested decorator) */
+.hud-panel-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.hud-panel-bottom::before, .hud-panel-bottom::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: var(--accent-purple);
+  border-style: solid;
+  transition: all 0.3s ease;
+}
+
+.hud-panel-bottom::before {
+  bottom: -1px;
+  left: -1px;
+  border-width: 0 0 2px 2px;
+}
+
+.hud-panel-bottom::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 2px 2px 0;
+}
+
+/* HUD Panel Hover */
+.hud-panel:hover {
+  border-color: rgba(0, 210, 255, 0.6);
+  box-shadow: 
+    0 0 25px rgba(0, 210, 255, 0.1),
+    inset 0 0 20px rgba(0, 210, 255, 0.1);
+  transform: translateY(-4px);
+}
+
+.hud-panel:hover::before {
+  border-color: var(--accent-cyan);
+  width: 18px;
+  height: 18px;
+}
+
+.hud-panel:hover::after {
+  border-color: var(--accent-cyan);
+  width: 18px;
+  height: 18px;
+}
+
+/* Diagonal stripe pattern divider */
+.diagonal-stripes {
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(0, 210, 255, 0.1),
+    rgba(0, 210, 255, 0.1) 5px,
+    transparent 5px,
+    transparent 10px
+  );
+  height: 6px;
+  width: 100%;
+  border-radius: 4px;
+}
+
+/* HUD buttons */
+.hud-btn {
+  position: relative;
+  font-family: var(--font-hud);
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 12px 24px;
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--accent-blue);
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.hud-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 210, 255, 0.2),
+    var(--accent-blue),
+    rgba(0, 210, 255, 0.2),
+    transparent
+  );
+  transition: all 0.5s ease;
+}
+
+.hud-btn:hover {
+  color: var(--bg-darker);
+  background: var(--accent-blue);
+  box-shadow: 0 0 15px var(--accent-blue);
+  border-color: var(--accent-cyan);
+  text-shadow: none;
+}
+
+.hud-btn:hover::before {
+  left: 100%;
+}
+
+.hud-btn-purple {
+  border-color: var(--accent-purple);
+}
+
+.hud-btn-purple:hover {
+  background: var(--accent-purple);
+  box-shadow: 0 0 15px var(--accent-purple);
+  border-color: var(--accent-purple);
+}
+
+/* XP/HUD Stat Level Bar */
+.hud-bar-container {
+  width: 100%;
+  height: 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(0, 210, 255, 0.2);
+  padding: 1px;
+  position: relative;
+  overflow: hidden;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+}
+
+.hud-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+  box-shadow: 0 0 8px var(--accent-cyan);
+  transition: width 1s cubic-bezier(0.1, 0.8, 0.2, 1);
+}
+
+.hud-bar-fill-purple {
+  background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
+  box-shadow: 0 0 8px var(--accent-blue);
+}
+
+/* Glitch Animation for Ajay's name */
+.glitch-wrapper {
+  display: inline-block;
+  position: relative;
+}
+
+.glitch-text {
+  position: relative;
+  font-family: var(--font-hud);
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.glitch-text::before,
+.glitch-text::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+}
+
+.glitch-text::before {
+  left: 2px;
+  text-shadow: -2px 0 var(--accent-cyan);
+  clip: rect(44px, 450px, 56px, 0);
+  animation: glitch-anim 5s infinite linear alternate-reverse;
+}
+
+.glitch-text::after {
+  left: -2px;
+  text-shadow: -2px 0 var(--accent-purple), 2px 2px var(--accent-blue);
+  clip: rect(85px, 450px, 140px, 0);
+  animation: glitch-anim-2 5s infinite linear alternate-reverse;
+}
+
+@keyframes glitch-anim {
+  0% { clip: rect(31px, 9999px, 94px, 0); }
+  5% { clip: rect(112px, 9999px, 76px, 0); }
+  10% { clip: rect(85px, 9999px, 5px, 0); }
+  15% { clip: rect(27px, 9999px, 115px, 0); }
+  20% { clip: rect(73px, 9999px, 29px, 0); }
+  25% { clip: rect(138px, 9999px, 102px, 0); }
+  30% { clip: rect(10px, 9999px, 85px, 0); }
+  35% { clip: rect(98px, 9999px, 144px, 0); }
+  40% { clip: rect(50px, 9999px, 120px, 0); }
+  45% { clip: rect(122px, 9999px, 60px, 0); }
+  50% { clip: rect(3px, 9999px, 13px, 0); }
+  55% { clip: rect(110px, 9999px, 70px, 0); }
+  60% { clip: rect(40px, 9999px, 85px, 0); }
+  65% { clip: rect(130px, 9999px, 148px, 0); }
+  70% { clip: rect(15px, 9999px, 35px, 0); }
+  75% { clip: rect(95px, 9999px, 110px, 0); }
+  80% { clip: rect(55px, 9999px, 125px, 0); }
+  85% { clip: rect(82px, 9999px, 45px, 0); }
+  90% { clip: rect(140px, 9999px, 150px, 0); }
+  95% { clip: rect(22px, 9999px, 75px, 0); }
+  100% { clip: rect(67px, 9999px, 99px, 0); }
+}
+
+@keyframes glitch-anim-2 {
+  0% { clip: rect(76px, 9999px, 116px, 0); }
+  5% { clip: rect(22px, 9999px, 45px, 0); }
+  10% { clip: rect(135px, 9999px, 142px, 0); }
+  15% { clip: rect(55px, 9999px, 92px, 0); }
+  20% { clip: rect(8px, 9999px, 123px, 0); }
+  25% { clip: rect(110px, 9999px, 78px, 0); }
+  30% { clip: rect(95px, 9999px, 13px, 0); }
+  35% { clip: rect(44px, 9999px, 105px, 0); }
+  40% { clip: rect(120px, 9999px, 140px, 0); }
+  45% { clip: rect(15px, 9999px, 62px, 0); }
+  50% { clip: rect(138px, 9999px, 149px, 0); }
+  55% { clip: rect(73px, 9999px, 85px, 0); }
+  60% { clip: rect(30px, 9999px, 5px, 0); }
+  65% { clip: rect(102px, 9999px, 118px, 0); }
+  70% { clip: rect(82px, 9999px, 130px, 0); }
+  75% { clip: rect(12px, 9999px, 50px, 0); }
+  80% { clip: rect(98px, 9999px, 110px, 0); }
+  85% { clip: rect(50px, 9999px, 75px, 0); }
+  90% { clip: rect(145px, 9999px, 150px, 0); }
+  95% { clip: rect(60px, 9999px, 88px, 0); }
+  100% { clip: rect(112px, 9999px, 135px, 0); }
+}
+
+/* Floating animation for HUD nodes */
+@keyframes float {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(1deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+.floating-hud {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Custom Grid layout for RPG panels */
+.rpg-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 32px;
+}
+
+@media (max-width: 968px) {
+  .rpg-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Section Dividers with Cyber styles */
+.section-divider {
+  display: flex;
+  align-items: center;
+  margin: 60px 0;
+  gap: 16px;
+  position: relative;
+}
+
+.section-divider-line {
+  flex-grow: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-color) 20%, var(--accent-blue) 50%, var(--border-color) 80%, transparent);
+}
+
+.section-divider-node {
+  font-family: var(--font-hud);
+  font-size: 0.75rem;
+  color: var(--accent-cyan);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: var(--bg-darker);
+  padding: 4px 12px;
+  border: 1px solid var(--accent-blue);
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+  box-shadow: var(--neon-glow-blue);
+}
+
+/* Animated scanlines for specific containers */
+.cyber-scanlines {
+  position: relative;
+  overflow: hidden;
+}
+
+.cyber-scanlines::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 210, 255, 0.08) 50%
+  ), linear-gradient(
+    90deg, 
+    rgba(255, 0, 0, 0.03), 
+    rgba(0, 255, 0, 0.01), 
+    rgba(0, 255, 0, 0.03)
+  );
+  background-size: 100% 3px, 3px 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Glitch borders */
+.glitch-border {
+  border: 1px solid var(--accent-purple);
+  box-shadow: inset 0 0 10px rgba(189, 0, 255, 0.1), 0 0 10px rgba(189, 0, 255, 0.1);
+}
+
+.glitch-border:hover {
+  border-color: var(--accent-cyan);
+  box-shadow: inset 0 0 15px rgba(0, 255, 196, 0.2), 0 0 15px rgba(0, 255, 196, 0.2);
+}
