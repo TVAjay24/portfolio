@@ -180,7 +180,7 @@ CREATE TABLE public.contact_methods (
 );
 
 INSERT INTO public.contact_methods (title, jp_name, icon_type, line, link, badge, sort_order) VALUES
-('GITHUB UPLINK', 'ソースコード', 'github', '> HANDLE // TVAjay', 'https://github.com/TVAjay', 'CONNECTED', 1),
+('GITHUB UPLINK', 'ソースコード', 'github', '> HANDLE // TVAjay24', 'https://github.com/TVAjay24', 'CONNECTED', 1),
 ('LINKEDIN NETWORK', 'プロフェッショナル', 'linkedin', '> PROFILE // T V Ajay', 'https://www.linkedin.com/in/t-v-ajay-b047013a5', 'CONNECTED', 2),
 ('MAIL TERMINAL', 'メール', 'email', '> ADDRESS // tvajay0@gmail.com', 'mailto:tvajay0@gmail.com', 'ACTIVE', 3),
 ('DIRECT COMM LINK', '電話番号', 'phone', '> NUMBER // +91 8050325644', 'tel:+918050325644', 'ACTIVE', 4);

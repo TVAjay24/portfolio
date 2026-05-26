@@ -143,8 +143,8 @@ const Contact = ({ isAdmin }) => {
       title: "GITHUB UPLINK",
       jp_name: "ソースコード",
       icon_type: "github",
-      line: "> HANDLE // TVAjay",
-      link: "https://github.com/TVAjay",
+      line: "> HANDLE // TVAjay24",
+      link: "https://github.com/TVAjay24",
       badge: "CONNECTED",
     },
     {
@@ -414,7 +414,7 @@ const Contact = ({ isAdmin }) => {
                       required
                       value={newContact.line}
                       onChange={(e) => setNewContact({ ...newContact, line: e.target.value })}
-                      placeholder="e.g. &gt; HANDLE // TVAjay"
+                      placeholder="e.g. &gt; HANDLE // TVAjay24"
                       style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(0,210,255,0.2)", color: "#fff", padding: "8px", fontSize: "0.8rem", outline: "none" }}
                     />
                   </div>
