@@ -30,29 +30,29 @@ const Skills = ({ isAdmin }) => {
   // Static fallback data to guarantee visual safety during setup
   const staticFallback = {
     languages: [
-      { name: "JavaScript", level: 90, description: "Primary logic syntax for web scripts and interactive systems." },
-      { name: "Python", level: 85, description: "Used for general computations, automation scripts, and backend prototypes." },
-      { name: "C Language", level: 80, description: "Foundational syntax for memory structures and pointer algorithms." },
+      { id: "lang_js", category: "languages", name: "JavaScript", level: 90, description: "Primary logic syntax for web scripts and interactive systems." },
+      { id: "lang_py", category: "languages", name: "Python", level: 85, description: "Used for general computations, automation scripts, and backend prototypes." },
+      { id: "lang_c", category: "languages", name: "C Language", level: 80, description: "Foundational syntax for memory structures and pointer algorithms." },
     ],
     frontend: [
-      { name: "React", level: 88, description: "Standard client blueprint compiler for interactive SPA nodes." },
-      { name: "Vite", level: 85, description: "Modern frontend build engine with rapid virtual hot-reloading." },
-      { name: "HTML5", level: 95, description: "Structure markup parser for digital layouts and DOM frameworks." },
-      { name: "CSS3", level: 90, description: "Styling sheet compiler using responsive grids, shapes, and custom glows." },
+      { id: "front_react", category: "frontend", name: "React", level: 88, description: "Standard client blueprint compiler for interactive SPA nodes." },
+      { id: "front_vite", category: "frontend", name: "Vite", level: 85, description: "Modern frontend build engine with rapid virtual hot-reloading." },
+      { id: "front_html", category: "frontend", name: "HTML5", level: 95, description: "Structure markup parser for digital layouts and DOM frameworks." },
+      { id: "front_css", category: "frontend", name: "CSS3", level: 90, description: "Styling sheet compiler using responsive grids, shapes, and custom glows." },
     ],
     backend: [
-      { name: "Node.js", level: 80, description: "Runtime compiler for executing JavaScript logic on the server mainframe." },
-      { name: "Express.js", level: 82, description: "Routing server blueprint library for standard REST API endpoints." },
+      { id: "back_node", category: "backend", name: "Node.js", level: 80, description: "Runtime compiler for executing JavaScript logic on the server mainframe." },
+      { id: "back_express", category: "backend", name: "Express.js", level: 82, description: "Routing server blueprint library for standard REST API endpoints." },
     ],
     database: [
-      { name: "Supabase", level: 85, description: "Digital database cluster mapping custom authentication and tables." },
-      { name: "PostgreSQL", level: 80, description: "Relational database server using rigid schemas and secure logic queries." },
-      { name: "MongoDB", level: 78, description: "Document database storage using dynamic JSON schema models." },
+      { id: "db_supabase", category: "database", name: "Supabase", level: 85, description: "Digital database cluster mapping custom authentication and tables." },
+      { id: "db_postgres", category: "database", name: "PostgreSQL", level: 80, description: "Relational database server using rigid schemas and secure logic queries." },
+      { id: "db_mongo", category: "database", name: "MongoDB", level: 78, description: "Document database storage using dynamic JSON schema models." },
     ],
     tools: [
-      { name: "Git", level: 85, description: "Main version logger and branch management database tool." },
-      { name: "GitHub", level: 88, description: "Remote terminal server for online repository backups." },
-      { name: "VS Code", level: 92, description: "Primary IDE workspace styled with keybind maps and extensions." },
+      { id: "tool_git", category: "tools", name: "Git", level: 85, description: "Main version logger and branch management database tool." },
+      { id: "tool_github", category: "tools", name: "GitHub", level: 88, description: "Remote terminal server for online repository backups." },
+      { id: "tool_vscode", category: "tools", name: "VS Code", level: 92, description: "Primary IDE workspace styled with keybind maps and extensions." },
     ],
   };
 
@@ -124,14 +124,32 @@ const Skills = ({ isAdmin }) => {
     if (!window.confirm(`DISSOLVE ABILITY NODE: "${skillName}"?`)) return;
 
     try {
-      const { error } = await supabase
-        .from("skills")
-        .delete()
-        .eq("id", skillId);
+      if (typeof skillId === "string" && skillId.length > 20) {
+        const { error } = await supabase
+          .from("skills")
+          .delete()
+          .eq("id", skillId);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      setSkills((prev) => prev.filter((s) => s.id !== skillId));
+        setSkills((prev) => prev.filter((s) => s.id !== skillId));
+      } else {
+        // Deleting a static skill card:
+        // Populate skills state with all static fallback values across all categories, except the deleted one
+        setSkills((prev) => {
+          let listToFilter = prev;
+          if (prev.length === 0) {
+            listToFilter = [
+              ...staticFallback.languages,
+              ...staticFallback.frontend,
+              ...staticFallback.backend,
+              ...staticFallback.database,
+              ...staticFallback.tools
+            ];
+          }
+          return listToFilter.filter((s) => s.id !== skillId);
+        });
+      }
     } catch (err) {
       alert("Failed to delete skill: " + err.message);
     }
@@ -150,26 +168,59 @@ const Skills = ({ isAdmin }) => {
   const handleSaveSkillEdit = async (skillId) => {
     try {
       const updatedSkill = {
+        category: activeCat,
         name: editSkillForm.name.trim(),
         level: parseInt(editSkillForm.level),
         description: editSkillForm.description.trim(),
       };
 
-      // Only attempt write if ID is standard uuid (i.e. not static fallback string)
       if (typeof skillId === "string" && skillId.length > 20) {
+        // Real DB Skill: update it
         const { error } = await supabase
           .from("skills")
-          .update(updatedSkill)
+          .update({
+            name: updatedSkill.name,
+            level: updatedSkill.level,
+            description: updatedSkill.description
+          })
           .eq("id", skillId);
 
         if (error) throw error;
-      }
 
-      // Sync local state
-      setSkills((prev) => {
-        const listToMap = prev.length > 0 ? prev : staticFallback[activeCat];
-        return listToMap.map((s) => (s.id === skillId ? { ...s, ...updatedSkill } : s));
-      });
+        // Sync local state
+        setSkills((prev) => {
+          return prev.map((s) => (s.id === skillId ? { ...s, ...updatedSkill } : s));
+        });
+      } else {
+        // Static Skill edited: insert it as a dynamic skill so it becomes database persistent!
+        const categorySkills = skills.filter((s) => s.category === activeCat);
+        updatedSkill.sort_order = categorySkills.length + 1;
+
+        const { data, error } = await supabase
+          .from("skills")
+          .insert([updatedSkill])
+          .select();
+
+        if (error) throw error;
+
+        if (data) {
+          // If skills was empty, we should initialize it with static fallbacks first, so they don't disappear
+          setSkills((prev) => {
+            let listToUpdate = prev;
+            if (prev.length === 0) {
+              listToUpdate = [
+                ...staticFallback.languages,
+                ...staticFallback.frontend,
+                ...staticFallback.backend,
+                ...staticFallback.database,
+                ...staticFallback.tools
+              ];
+            }
+            // Replace the edited static item with the new dynamic DB one, so it has a real UUID now!
+            return listToUpdate.map((s) => (s.id === skillId ? data[0] : s));
+          });
+        }
+      }
 
       setEditingSkillId(null);
     } catch (err) {
