@@ -1,11 +1,12 @@
 -- ====================================================================
--- Ajay's 100% Dynamic Gaming HUD Portfolio Database Blueprint
--- Copy and paste this entire script into your Supabase SQL Editor!
+-- Ajay's 100% Dynamic Gaming HUD Portfolio Unified Database Blueprint
+-- Copy and paste this ENTIRE script into your Supabase SQL Editor!
 -- ====================================================================
 
 -- --------------------------------------------------------------------
 -- 1. Drop existing tables if they exist (for clean initialization)
 -- --------------------------------------------------------------------
+DROP TABLE IF EXISTS public.contact_messages CASCADE;
 DROP TABLE IF EXISTS public.contact_methods CASCADE;
 DROP TABLE IF EXISTS public.education_objectives CASCADE;
 DROP TABLE IF EXISTS public.passive_skills CASCADE;
@@ -108,26 +109,68 @@ INSERT INTO public.passive_skills (name, jp_name, description, sort_order) VALUE
 ('PROBLEM SOLVER', '解決者', 'Approaching logic bugs and algorithmic hurdles with a systematic C/Python process.', 4);
 
 -- --------------------------------------------------------------------
--- 5. Create projects Table (Quest logs)
+-- 5. Create projects Table (Quest logs - supports BOTH RPG and CMS schemas)
 -- --------------------------------------------------------------------
 CREATE TABLE public.projects (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    -- CMS Columns
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    tech_stack TEXT[] NOT NULL DEFAULT '{}',
+    live_url TEXT DEFAULT '#',
+    github_url TEXT DEFAULT '#',
+    thumbnail_url TEXT,
+    date TEXT,
+    
+    -- RPG Quest Columns (for backwards compatibility/bridge)
     type TEXT NOT NULL DEFAULT 'MAIN QUEST',
     name TEXT NOT NULL,
     jp_name TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'IN PROGRESS',
     difficulty TEXT NOT NULL DEFAULT 'MEDIUM',
-    description TEXT NOT NULL,
     loot TEXT[] NOT NULL DEFAULT '{}',
     github TEXT DEFAULT '#',
     live TEXT DEFAULT '#',
-    sort_order INTEGER NOT NULL DEFAULT 0,
+    
+    sort_order INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-INSERT INTO public.projects (type, name, jp_name, status, difficulty, description, loot, github, live, sort_order) VALUES
-('MAIN QUEST', 'CampusLink', 'キャンパスリンク', 'IN PROGRESS', 'HARD', 'A comprehensive full-stack campus community web application custom engineered for Vidyavardhaka College of Engineering (VVCE) students. Features include an active peer Marketplace, Event coordinates, open discussion Forum boards, group messaging nodes, and personal Connection Wishlists.', ARRAY['React + Vite', 'Node.js', 'Express.js', 'Supabase', 'PostgreSQL'], 'https://github.com/ajayotaku2-dev/CampusLink', '#', 1),
-('HACKATHON QUEST', 'CampusFinance', 'キャンパスファイナンス', 'IN PROGRESS', 'MEDIUM', 'A student-centric financial micro-budgeting dashboard built under tight hackathon timelines. Empowers students to log daily expenditures, track scholarship/grant allocations, and visualize monthly budgeting structures to curb college costs.', ARRAY['React', 'Node.js', 'Express.js', 'Supabase'], 'https://github.com/ajayotaku2-dev/CampusFinance', '#', 2);
+INSERT INTO public.projects (title, name, jp_name, description, tech_stack, loot, github_url, github, live_url, live, date, type, status, difficulty, sort_order) VALUES
+(
+  'CampusLink', 
+  'CampusLink',
+  'キャンパスリンク', 
+  'A comprehensive full-stack campus community web application custom engineered for Vidyavardhaka College of Engineering (VVCE) students. Features include an active peer Marketplace, Event coordinates, open discussion Forum boards, group messaging nodes, and personal Connection Wishlists.', 
+  ARRAY['React + Vite', 'Node.js', 'Express.js', 'Supabase', 'PostgreSQL'], 
+  ARRAY['React + Vite', 'Node.js', 'Express.js', 'Supabase', 'PostgreSQL'], 
+  'https://github.com/ajayotaku2-dev/CampusLink', 
+  'https://github.com/ajayotaku2-dev/CampusLink', 
+  '#', 
+  '#', 
+  '2024 - 2025',
+  'MAIN QUEST',
+  'IN PROGRESS',
+  'HARD',
+  1
+),
+(
+  'CampusFinance', 
+  'CampusFinance',
+  'キャンパスファイナンス', 
+  'A student-centric financial micro-budgeting dashboard built under tight hackathon timelines. Empowers students to log daily expenditures, track scholarship/grant allocations, and visualize monthly budgeting structures to curb college costs.', 
+  ARRAY['React', 'Node.js', 'Express.js', 'Supabase'], 
+  ARRAY['React', 'Node.js', 'Express.js', 'Supabase'], 
+  'https://github.com/ajayotaku2-dev/CampusFinance', 
+  'https://github.com/ajayotaku2-dev/CampusFinance', 
+  '#', 
+  '#', 
+  '2024',
+  'HACKATHON QUEST',
+  'IN PROGRESS',
+  'MEDIUM',
+  2
+);
 
 -- --------------------------------------------------------------------
 -- 6. Create achievements Table (Trophy logs)
@@ -186,9 +229,25 @@ INSERT INTO public.contact_methods (title, jp_name, icon_type, line, link, badge
 ('DIRECT COMM LINK', '電話番号', 'phone', '> NUMBER // +91 8050325644', 'tel:+918050325644', 'ACTIVE', 4);
 
 -- --------------------------------------------------------------------
--- 9. Configure Row Level Security (RLS)
+-- 9. Create contact_messages Table (Transmissions Inbox)
+-- --------------------------------------------------------------------
+CREATE TABLE public.contact_messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Seed initial transmission message
+INSERT INTO public.contact_messages (name, email, message)
+VALUES ('Asuka Langley', 'asuka@nerv.org', 'Hey Ajay! I checked out your Gaming HUD portfolio and it looks incredibly sick. Let''s collaborate on some cyberpunk web designs! /// SIGNAL_OUT');
+
+-- --------------------------------------------------------------------
+-- 10. Configure Row Level Security (RLS) & Policies
 -- --------------------------------------------------------------------
 
+-- Enable RLS
 ALTER TABLE public.profile_stats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.skills ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.passive_skills ENABLE ROW LEVEL SECURITY;
@@ -196,8 +255,9 @@ ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.achievements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.education_objectives ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contact_methods ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.contact_messages ENABLE ROW LEVEL SECURITY;
 
--- Select Policies
+-- 10a. Public Read Access Policies (Allow anyone to view your portfolio data)
 CREATE POLICY "Allow public read access for profile_stats" ON public.profile_stats FOR SELECT USING (true);
 CREATE POLICY "Allow public read access for skills" ON public.skills FOR SELECT USING (true);
 CREATE POLICY "Allow public read access for passive_skills" ON public.passive_skills FOR SELECT USING (true);
@@ -206,7 +266,7 @@ CREATE POLICY "Allow public read access for achievements" ON public.achievements
 CREATE POLICY "Allow public read access for education_objectives" ON public.education_objectives FOR SELECT USING (true);
 CREATE POLICY "Allow public read access for contact_methods" ON public.contact_methods FOR SELECT USING (true);
 
--- Authenticated Writes Policies
+-- 10b. Authenticated Write Access Policies (Restricts database changes exclusively to your Admin session)
 CREATE POLICY "Allow authenticated admin writes for profile_stats" ON public.profile_stats FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated admin writes for skills" ON public.skills FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated admin writes for passive_skills" ON public.passive_skills FOR ALL TO authenticated USING (true) WITH CHECK (true);
@@ -214,3 +274,9 @@ CREATE POLICY "Allow authenticated admin writes for projects" ON public.projects
 CREATE POLICY "Allow authenticated admin writes for achievements" ON public.achievements FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated admin writes for education_objectives" ON public.education_objectives FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated admin writes for contact_methods" ON public.contact_methods FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- 10c. Contact Messages Security Setup (Visitor Transmissions)
+-- Anyone can insert a message, but only the authenticated admin can read or delete them
+CREATE POLICY "Allow public insert for contact_messages" ON public.contact_messages FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow authenticated admin read for contact_messages" ON public.contact_messages FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Allow authenticated admin delete for contact_messages" ON public.contact_messages FOR DELETE TO authenticated USING (true);
