@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import RevealSection from "./RevealSection";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../supabase";
-import { Code, Terminal, Server, Database, Settings, Trash2, Plus, Check, X } from "lucide-react";
+import { Code, Terminal, Server, Database, Settings, Trash2, Plus, Check, X, Edit } from "lucide-react";
 
 const Skills = ({ isAdmin }) => {
   const [activeCat, setActiveCat] = useState("languages");
@@ -14,6 +14,10 @@ const Skills = ({ isAdmin }) => {
   const [newSkillLevel, setNewSkillLevel] = useState(80);
   const [newSkillDesc, setNewSkillDesc] = useState("");
   const [formOpen, setFormOpen] = useState(false);
+
+  // Admin state for editing skills inline
+  const [editingSkillId, setEditingSkillId] = useState(null);
+  const [editSkillForm, setEditSkillForm] = useState({ name: "", level: 80, description: "" });
 
   const categories = [
     { id: "languages", name: "LANGUAGES", icon: Terminal, jpName: "言語" },
@@ -133,6 +137,46 @@ const Skills = ({ isAdmin }) => {
     }
   };
 
+  // Inline edit handlers
+  const handleEditClick = (s) => {
+    setEditingSkillId(s.id);
+    setEditSkillForm({
+      name: s.name,
+      level: s.level,
+      description: s.description || "",
+    });
+  };
+
+  const handleSaveSkillEdit = async (skillId) => {
+    try {
+      const updatedSkill = {
+        name: editSkillForm.name.trim(),
+        level: parseInt(editSkillForm.level),
+        description: editSkillForm.description.trim(),
+      };
+
+      // Only attempt write if ID is standard uuid (i.e. not static fallback string)
+      if (typeof skillId === "string" && skillId.length > 20) {
+        const { error } = await supabase
+          .from("skills")
+          .update(updatedSkill)
+          .eq("id", skillId);
+
+        if (error) throw error;
+      }
+
+      // Sync local state
+      setSkills((prev) => {
+        const listToMap = prev.length > 0 ? prev : staticFallback[activeCat];
+        return listToMap.map((s) => (s.id === skillId ? { ...s, ...updatedSkill } : s));
+      });
+
+      setEditingSkillId(null);
+    } catch (err) {
+      alert("Database error: " + err.message);
+    }
+  };
+
   const activeSkillsList = getCategorizedSkills(activeCat);
 
   return (
@@ -226,83 +270,164 @@ const Skills = ({ isAdmin }) => {
                   gap: "20px",
                 }}
               >
-                {activeSkillsList.map((skill, idx) => (
-                  <div
-                    key={skill.id || idx}
-                    className="hud-panel cyber-scanlines"
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "12px",
-                      padding: "20px",
-                      borderLeft: `3px solid ${activeCat === "frontend" || activeCat === "languages" ? "var(--accent-cyan)" : "var(--accent-purple)"}`,
-                    }}
-                  >
-                    <div className="hud-panel-bottom" />
+                {activeSkillsList.map((skill, idx) => {
+                  const isEditing = editingSkillId === skill.id;
 
-                    {/* Node Heading */}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontFamily: "var(--font-hud)", fontSize: "0.95rem", letterSpacing: "1px", fontWeight: "700" }}>
-                        {skill.name}
-                      </span>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span
-                          style={{
-                            fontFamily: "var(--font-hud)",
-                            fontSize: "0.75rem",
-                            color: activeCat === "frontend" || activeCat === "languages" ? "var(--accent-cyan)" : "var(--accent-purple)",
-                            fontWeight: "900",
-                            textShadow: activeCat === "frontend" || activeCat === "languages" ? "var(--neon-glow-cyan)" : "var(--neon-glow-purple)",
-                          }}
-                        >
-                          LV. {skill.level}
-                        </span>
-                        {isAdmin && skill.id && (
-                          <button
-                            onClick={() => handleDeleteSkill(skill.id, skill.name)}
-                            style={{
-                              background: "transparent",
-                              border: "none",
-                              cursor: "pointer",
-                              color: "#ff4a4a",
-                              display: "flex",
-                              alignItems: "center",
-                              padding: 0,
-                            }}
-                            title="DISSOLVE NODE"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        )}
-                      </div>
+                  return (
+                    <div
+                      key={skill.id || idx}
+                      className="hud-panel cyber-scanlines"
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "12px",
+                        padding: "20px",
+                        borderLeft: `3px solid ${activeCat === "frontend" || activeCat === "languages" ? "var(--accent-cyan)" : "var(--accent-purple)"}`,
+                      }}
+                    >
+                      <div className="hud-panel-bottom" />
+
+                      {isEditing ? (
+                        /* Inline Edit Mode Form */
+                        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <label style={{ fontSize: "0.65rem", color: "var(--text-secondary)" }}>NODE NAME</label>
+                            <input
+                              type="text"
+                              value={editSkillForm.name}
+                              onChange={(e) => setEditSkillForm({ ...editSkillForm, name: e.target.value })}
+                              style={{ background: "rgba(0,0,0,0.8)", border: "1px solid rgba(0,210,255,0.2)", color: "#fff", padding: "6px", fontSize: "0.8rem", outline: "none" }}
+                            />
+                          </div>
+
+                          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <label style={{ fontSize: "0.65rem", color: "var(--text-secondary)", display: "flex", justifyContent: "space-between" }}>
+                              <span>LEVEL</span>
+                              <span>{editSkillForm.level}%</span>
+                            </label>
+                            <input
+                              type="range"
+                              min="10"
+                              max="100"
+                              value={editSkillForm.level}
+                              onChange={(e) => setEditSkillForm({ ...editSkillForm, level: parseInt(e.target.value) })}
+                              style={{ width: "100%", accentColor: "var(--accent-cyan)", cursor: "pointer" }}
+                            />
+                          </div>
+
+                          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <label style={{ fontSize: "0.65rem", color: "var(--text-secondary)" }}>DESCRIPTION</label>
+                            <textarea
+                              value={editSkillForm.description}
+                              onChange={(e) => setEditSkillForm({ ...editSkillForm, description: e.target.value })}
+                              rows="2"
+                              style={{ background: "rgba(0,0,0,0.8)", border: "1px solid rgba(0,210,255,0.2)", color: "#fff", padding: "6px", fontSize: "0.78rem", outline: "none", resize: "none" }}
+                            />
+                          </div>
+
+                          <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                            <button
+                              onClick={() => handleSaveSkillEdit(skill.id)}
+                              className="hud-btn"
+                              style={{ padding: "4px 8px", fontSize: "0.65rem", display: "flex", alignItems: "center", gap: "4px" }}
+                            >
+                              <Check size={10} /> SAVE
+                            </button>
+                            <button
+                              onClick={() => setEditingSkillId(null)}
+                              className="hud-btn hud-btn-purple"
+                              style={{ padding: "4px 8px", fontSize: "0.65rem", display: "flex", alignItems: "center", gap: "4px" }}
+                            >
+                              <X size={10} /> CANCEL
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        /* Static Reading Mode Card */
+                        <>
+                          {/* Node Heading */}
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontFamily: "var(--font-hud)", fontSize: "0.95rem", letterSpacing: "1px", fontWeight: "700" }}>
+                              {skill.name}
+                            </span>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                              <span
+                                style={{
+                                  fontFamily: "var(--font-hud)",
+                                  fontSize: "0.75rem",
+                                  color: activeCat === "frontend" || activeCat === "languages" ? "var(--accent-cyan)" : "var(--accent-purple)",
+                                  fontWeight: "900",
+                                  textShadow: activeCat === "frontend" || activeCat === "languages" ? "var(--neon-glow-cyan)" : "var(--neon-glow-purple)",
+                                }}
+                              >
+                                LV. {skill.level}
+                              </span>
+                              {isAdmin && skill.id && (
+                                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                  <button
+                                    onClick={() => handleEditClick(skill)}
+                                    style={{
+                                      background: "transparent",
+                                      border: "none",
+                                      cursor: "pointer",
+                                      color: "var(--accent-cyan)",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      padding: 0,
+                                    }}
+                                    title="EDIT NODE"
+                                  >
+                                    <Edit size={12} />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteSkill(skill.id, skill.name)}
+                                    style={{
+                                      background: "transparent",
+                                      border: "none",
+                                      cursor: "pointer",
+                                      color: "#ff4a4a",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      padding: 0,
+                                    }}
+                                    title="DISSOLVE NODE"
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Level Progress Gauge Bar */}
+                          <div>
+                            <div className="hud-bar-container" style={{ height: "8px" }}>
+                              <div
+                                className={`hud-bar-fill ${activeCat === "frontend" || activeCat === "languages" ? "" : "hud-bar-fill-purple"}`}
+                                style={{ width: `${skill.level}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Skill Context Description */}
+                          <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                            {skill.description}
+                          </p>
+
+                          {/* Micro crosshair decorative visualizer */}
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", opacity: 0.4 }}>
+                            <span style={{ fontFamily: "var(--font-hud)", fontSize: "0.55rem", color: "var(--text-muted)" }}>
+                              ID: {skill.id ? skill.id.slice(0, 8) : `STATIC_0${idx + 1}`}
+                            </span>
+                            <span style={{ fontFamily: "var(--font-hud)", fontSize: "0.5rem" }}>
+                              [ SYS_OK // NOD_0{idx + 1} ]
+                            </span>
+                          </div>
+                        </>
+                      )}
                     </div>
-
-                    {/* Level Progress Gauge Bar */}
-                    <div>
-                      <div className="hud-bar-container" style={{ height: "8px" }}>
-                        <div
-                          className={`hud-bar-fill ${activeCat === "frontend" || activeCat === "languages" ? "" : "hud-bar-fill-purple"}`}
-                          style={{ width: `${skill.level}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Skill Context Description */}
-                    <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
-                      {skill.description}
-                    </p>
-
-                    {/* Micro crosshair decorative visualizer */}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", opacity: 0.4 }}>
-                      <span style={{ fontFamily: "var(--font-hud)", fontSize: "0.55rem", color: "var(--text-muted)" }}>
-                        ID: {skill.id ? skill.id.slice(0, 8) : `STATIC_0${idx + 1}`}
-                      </span>
-                      <span style={{ fontFamily: "var(--font-hud)", fontSize: "0.5rem" }}>
-                        [ SYS_OK // NOD_0{idx + 1} ]
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Admin Form: Add New Skill */}
