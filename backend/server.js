@@ -57,6 +57,22 @@ const requireAdmin = async (req, res, next) => {
   }
 };
 
+// Defensive Database Write Handler (catches missing SUPABASE_SERVICE_KEY / RLS policy issues gracefully)
+const handleWriteResponse = (res, data, error, statusCode = 200) => {
+  if (error) throw error;
+  if (!data || data.length === 0) {
+    if (supabaseServiceKey === supabaseAnonKey) {
+      return res.status(403).json({
+        error: "Database write failed (no rows updated). The administrative SUPABASE_SERVICE_KEY environment variable is missing on your backend server context. Please add it to your Vercel project settings (Environment Variables) as SUPABASE_SERVICE_KEY, and then REDEPLOY your project so Vercel loads the new variable."
+      });
+    }
+    return res.status(400).json({
+      error: "Database write failed (no rows updated). Please verify your target record exists and that Row Level Security (RLS) policies allow this modification."
+    });
+  }
+  res.status(statusCode).json(data[0]);
+};
+
 // ROOT Health Check
 app.get('/', (req, res) => {
   res.json({ status: 'active', service: 'Ajay\'s Dynamic HUD Portfolio CMS REST API Core' });
@@ -82,14 +98,12 @@ app.get('/api/profile', async (req, res) => {
 app.put('/api/profile', requireAdmin, async (req, res) => {
   try {
     const payload = req.body;
-    // We update the row where character_name is 'AJAY'
     const { data, error } = await supabaseAdmin
       .from('profile_stats')
       .update(payload)
       .eq('character_name', 'AJAY')
       .select();
-    if (error) throw error;
-    res.json(data[0]);
+    handleWriteResponse(res, data, error);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -119,8 +133,7 @@ app.post('/api/skills', requireAdmin, async (req, res) => {
       .from('skills')
       .insert([{ category, name, level: parseInt(level), description, sort_order: sort_order || 0 }])
       .select();
-    if (error) throw error;
-    res.status(201).json(data[0]);
+    handleWriteResponse(res, data, error, 201);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -135,8 +148,7 @@ app.put('/api/skills/:id', requireAdmin, async (req, res) => {
       .update({ category, name, level: parseInt(level), description, sort_order })
       .eq('id', id)
       .select();
-    if (error) throw error;
-    res.json(data[0]);
+    handleWriteResponse(res, data, error);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -179,8 +191,7 @@ app.post('/api/passive-skills', requireAdmin, async (req, res) => {
       .from('passive_skills')
       .insert([{ name, jp_name, description, sort_order: sort_order || 0 }])
       .select();
-    if (error) throw error;
-    res.status(201).json(data[0]);
+    handleWriteResponse(res, data, error, 201);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -195,8 +206,7 @@ app.put('/api/passive-skills/:id', requireAdmin, async (req, res) => {
       .update({ name, jp_name, description, sort_order })
       .eq('id', id)
       .select();
-    if (error) throw error;
-    res.json(data[0]);
+    handleWriteResponse(res, data, error);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -240,8 +250,7 @@ app.post('/api/projects', requireAdmin, async (req, res) => {
       .from('projects')
       .insert([payload])
       .select();
-    if (error) throw error;
-    res.status(201).json(data[0]);
+    handleWriteResponse(res, data, error, 201);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -256,8 +265,7 @@ app.put('/api/projects/:id', requireAdmin, async (req, res) => {
       .update(payload)
       .eq('id', id)
       .select();
-    if (error) throw error;
-    res.json(data[0]);
+    handleWriteResponse(res, data, error);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -301,8 +309,7 @@ app.post('/api/achievements', requireAdmin, async (req, res) => {
       .from('achievements')
       .insert([{ title, jp_name, award, date, xp_reward, description, sort_order: sort_order || 0 }])
       .select();
-    if (error) throw error;
-    res.status(201).json(data[0]);
+    handleWriteResponse(res, data, error, 201);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -317,8 +324,7 @@ app.put('/api/achievements/:id', requireAdmin, async (req, res) => {
       .update({ title, jp_name, award, date, xp_reward, description, sort_order })
       .eq('id', id)
       .select();
-    if (error) throw error;
-    res.json(data[0]);
+    handleWriteResponse(res, data, error);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -361,8 +367,7 @@ app.post('/api/education', requireAdmin, async (req, res) => {
       .from('education_objectives')
       .insert([{ objective_number, text, sort_order: sort_order || 0 }])
       .select();
-    if (error) throw error;
-    res.status(201).json(data[0]);
+    handleWriteResponse(res, data, error, 201);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -377,8 +382,7 @@ app.put('/api/education/:id', requireAdmin, async (req, res) => {
       .update({ objective_number, text, sort_order })
       .eq('id', id)
       .select();
-    if (error) throw error;
-    res.json(data[0]);
+    handleWriteResponse(res, data, error);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -421,8 +425,7 @@ app.post('/api/contact', requireAdmin, async (req, res) => {
       .from('contact_methods')
       .insert([{ title, jp_name, icon_type, line, link, badge, sort_order: sort_order || 0 }])
       .select();
-    if (error) throw error;
-    res.status(201).json(data[0]);
+    handleWriteResponse(res, data, error, 201);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -437,8 +440,7 @@ app.put('/api/contact/:id', requireAdmin, async (req, res) => {
       .update({ title, jp_name, icon_type, line, link, badge, sort_order })
       .eq('id', id)
       .select();
-    if (error) throw error;
-    res.json(data[0]);
+    handleWriteResponse(res, data, error);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -482,8 +484,7 @@ app.post('/api/blog', requireAdmin, async (req, res) => {
       .from('blog_posts')
       .insert([{ title, slug, content, cover_image_url, published_date, is_draft: !!is_draft }])
       .select();
-    if (error) throw error;
-    res.status(201).json(data[0]);
+    handleWriteResponse(res, data, error, 201);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -498,8 +499,7 @@ app.put('/api/blog/:id', requireAdmin, async (req, res) => {
       .update({ title, slug, content, cover_image_url, published_date, is_draft: !!is_draft })
       .eq('id', id)
       .select();
-    if (error) throw error;
-    res.json(data[0]);
+    handleWriteResponse(res, data, error);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
