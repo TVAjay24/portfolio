@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import RevealSection from "./RevealSection";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../supabase";
+import { apiFetch } from "../api";
 import { Code, Terminal, Server, Database, Settings, Trash2, Plus, Check, X, Edit } from "lucide-react";
 
 const Skills = ({ isAdmin }) => {
@@ -56,15 +57,10 @@ const Skills = ({ isAdmin }) => {
     ],
   };
 
-  // Fetch real-time skills from Supabase
+  // Fetch real-time skills from Express API
   const fetchSkills = async () => {
     try {
-      const { data, error } = await supabase
-        .from("skills")
-        .select("*")
-        .order("sort_order", { ascending: true });
-
-      if (error) throw error;
+      const data = await apiFetch("/api/skills");
       if (data && data.length > 0) {
         setSkills(data);
       }
@@ -85,7 +81,7 @@ const Skills = ({ isAdmin }) => {
     return dbFiltered.length > 0 ? dbFiltered : staticFallback[catId];
   };
 
-  // Add new skill node in active category
+  // Add new skill node in active category via Express API
   const handleAddSkill = async (e) => {
     e.preventDefault();
     if (!newSkillName.trim()) return;
@@ -100,15 +96,13 @@ const Skills = ({ isAdmin }) => {
         sort_order: categorySkills.length + 1,
       };
 
-      const { data, error } = await supabase
-        .from("skills")
-        .insert([newSkill])
-        .select();
-
-      if (error) throw error;
+      const data = await apiFetch("/api/skills", {
+        method: "POST",
+        body: JSON.stringify(newSkill)
+      });
 
       if (data) {
-        setSkills((prev) => [...prev, data[0]]);
+        setSkills((prev) => [...prev, data]);
         setNewSkillName("");
         setNewSkillDesc("");
         setNewSkillLevel(80);
@@ -119,19 +113,15 @@ const Skills = ({ isAdmin }) => {
     }
   };
 
-  // Remove skill node
+  // Remove skill node via Express API
   const handleDeleteSkill = async (skillId, skillName) => {
     if (!window.confirm(`DISSOLVE ABILITY NODE: "${skillName}"?`)) return;
 
     try {
       if (typeof skillId === "string" && skillId.length > 20) {
-        const { error } = await supabase
-          .from("skills")
-          .delete()
-          .eq("id", skillId);
-
-        if (error) throw error;
-
+        await apiFetch(`/api/skills/${skillId}`, {
+          method: "DELETE"
+        });
         setSkills((prev) => prev.filter((s) => s.id !== skillId));
       } else {
         // Deleting a static skill card:
@@ -176,32 +166,24 @@ const Skills = ({ isAdmin }) => {
 
       if (typeof skillId === "string" && skillId.length > 20) {
         // Real DB Skill: update it
-        const { error } = await supabase
-          .from("skills")
-          .update({
-            name: updatedSkill.name,
-            level: updatedSkill.level,
-            description: updatedSkill.description
-          })
-          .eq("id", skillId);
-
-        if (error) throw error;
+        const data = await apiFetch(`/api/skills/${skillId}`, {
+          method: "PUT",
+          body: JSON.stringify(updatedSkill)
+        });
 
         // Sync local state
         setSkills((prev) => {
-          return prev.map((s) => (s.id === skillId ? { ...s, ...updatedSkill } : s));
+          return prev.map((s) => (s.id === skillId ? data : s));
         });
       } else {
         // Static Skill edited: insert it as a dynamic skill so it becomes database persistent!
         const categorySkills = skills.filter((s) => s.category === activeCat);
         updatedSkill.sort_order = categorySkills.length + 1;
 
-        const { data, error } = await supabase
-          .from("skills")
-          .insert([updatedSkill])
-          .select();
-
-        if (error) throw error;
+        const data = await apiFetch("/api/skills", {
+          method: "POST",
+          body: JSON.stringify(updatedSkill)
+        });
 
         if (data) {
           // If skills was empty, we should initialize it with static fallbacks first, so they don't disappear
@@ -217,7 +199,7 @@ const Skills = ({ isAdmin }) => {
               ];
             }
             // Replace the edited static item with the new dynamic DB one, so it has a real UUID now!
-            return listToUpdate.map((s) => (s.id === skillId ? data[0] : s));
+            return listToUpdate.map((s) => (s.id === skillId ? data : s));
           });
         }
       }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import RevealSection from "./RevealSection";
 import { supabase } from "../supabase";
+import { apiFetch } from "../api";
 import { Cpu, Zap, Edit2, Check, X, Edit, CheckSquare, Plus, Trash2 } from "lucide-react";
 
 const AboutMe = ({ isAdmin }) => {
@@ -65,16 +66,10 @@ const AboutMe = ({ isAdmin }) => {
     },
   ];
 
-  // Fetch real-time RPG stats & biography from Supabase
+  // Fetch real-time RPG stats & biography from Express API
   const fetchStatsAndBio = async () => {
     try {
-      const { data, error } = await supabase
-        .from("profile_stats")
-        .select("*")
-        .limit(1)
-        .single();
-
-      if (error) throw error;
+      const data = await apiFetch("/api/profile");
       if (data) {
         setStats(data);
         if (data.biography) setBioText(data.biography);
@@ -84,15 +79,10 @@ const AboutMe = ({ isAdmin }) => {
     }
   };
 
-  // Fetch dynamic passive traits from database
+  // Fetch dynamic passive traits from database Express API
   const fetchPassiveSkills = async () => {
     try {
-      const { data, error } = await supabase
-        .from("passive_skills")
-        .select("*")
-        .order("sort_order", { ascending: true });
-
-      if (error) throw error;
+      const data = await apiFetch("/api/passive-skills");
       if (data && data.length > 0) {
         setPassiveSkills(data);
       }
@@ -108,7 +98,7 @@ const AboutMe = ({ isAdmin }) => {
     fetchPassiveSkills();
   }, []);
 
-  // Update RPG stats in Supabase
+  // Update RPG stats in database via Express API
   const saveStatUpdate = async (field, value) => {
     try {
       const updateData = { [field]: value };
@@ -117,12 +107,10 @@ const AboutMe = ({ isAdmin }) => {
         updateData.player_rank = `LV.${value}`;
       }
 
-      const { error } = await supabase
-        .from("profile_stats")
-        .update(updateData)
-        .eq("character_name", "AJAY");
-
-      if (error) throw error;
+      await apiFetch("/api/profile", {
+        method: "PUT",
+        body: JSON.stringify(updateData)
+      });
 
       setStats((prev) => {
         const next = { ...prev, [field]: value };
@@ -138,16 +126,14 @@ const AboutMe = ({ isAdmin }) => {
     }
   };
 
-  // Update biography narrative
+  // Update biography narrative via Express API
   const handleSaveBio = async () => {
     try {
       const trimmedBio = editBioVal.trim() || bioText;
-      const { error } = await supabase
-        .from("profile_stats")
-        .update({ biography: trimmedBio })
-        .eq("character_name", "AJAY");
-
-      if (error) throw error;
+      await apiFetch("/api/profile", {
+        method: "PUT",
+        body: JSON.stringify({ biography: trimmedBio })
+      });
 
       setBioText(trimmedBio);
       setIsEditingBio(false);
@@ -175,12 +161,23 @@ const AboutMe = ({ isAdmin }) => {
       };
 
       if (typeof passiveId === "string" && passiveId.length > 20) {
-        const { error } = await supabase
-          .from("passive_skills")
-          .update(updated)
-          .eq("id", passiveId);
-
-        if (error) throw error;
+        await apiFetch(`/api/passive-skills/${passiveId}`, {
+          method: "PUT",
+          body: JSON.stringify(updated)
+        });
+      } else {
+        updated.sort_order = passiveSkills.length + 1;
+        const data = await apiFetch("/api/passive-skills", {
+          method: "POST",
+          body: JSON.stringify(updated)
+        });
+        
+        setPassiveSkills((prev) => {
+          const listToMap = prev.length > 0 ? prev : staticFallbackSkills;
+          return listToMap.map((s) => (s.id === passiveId ? data : s));
+        });
+        setEditingPassiveId(null);
+        return;
       }
 
       setPassiveSkills((prev) => {
@@ -200,24 +197,20 @@ const AboutMe = ({ isAdmin }) => {
 
     try {
       const insertedObj = {
-        name: newPassive.name,
-        jp_name: newPassive.jp_name || "パッシブ",
-        description: newPassive.description || "Synthesizing core parameters...",
+        name: newPassive.name.trim(),
+        jp_name: newPassive.jp_name.trim() || "パッシブ",
+        description: newPassive.description.trim() || "Synthesizing core parameters...",
         sort_order: passiveSkills.length + 1,
       };
 
-      const { data, error } = await supabase
-        .from("passive_skills")
-        .insert([insertedObj])
-        .select();
+      const data = await apiFetch("/api/passive-skills", {
+        method: "POST",
+        body: JSON.stringify(insertedObj)
+      });
 
-      if (error) throw error;
-
-      if (data) {
-        setPassiveSkills((prev) => [...prev, data[0]]);
-        setNewPassive({ name: "", jp_name: "", description: "" });
-        setAddPassiveOpen(false);
-      }
+      setPassiveSkills((prev) => [...prev, data]);
+      setNewPassive({ name: "", jp_name: "", description: "" });
+      setAddPassiveOpen(false);
     } catch (err) {
       alert("Failed to inject passive skill: " + err.message);
     }
@@ -228,15 +221,19 @@ const AboutMe = ({ isAdmin }) => {
 
     try {
       if (typeof passiveId === "string" && passiveId.length > 20) {
-        const { error } = await supabase
-          .from("passive_skills")
-          .delete()
-          .eq("id", passiveId);
-
-        if (error) throw error;
+        await apiFetch(`/api/passive-skills/${passiveId}`, {
+          method: "DELETE"
+        });
+        setPassiveSkills((prev) => prev.filter((s) => s.id !== passiveId));
+      } else {
+        setPassiveSkills((prev) => {
+          let listToFilter = prev;
+          if (prev.length === 0) {
+            listToFilter = staticFallbackSkills;
+          }
+          return listToFilter.filter((s) => s.id !== passiveId);
+        });
       }
-
-      setPassiveSkills((prev) => prev.filter((s) => s.id !== passiveId));
     } catch (err) {
       alert("Database error: " + err.message);
     }

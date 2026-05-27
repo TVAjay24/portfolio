@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import RevealSection from "./RevealSection";
-import { supabase } from "../supabase";
+import { apiFetch } from "../api";
 import { Terminal, ArrowUpRight, Edit, Check, X, Plus, Trash2, Send, ShieldAlert, Sparkles } from "lucide-react";
 
 export const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
@@ -98,14 +98,10 @@ const Contact = ({ isAdmin }) => {
     setSentSuccess(false);
 
     try {
-      const response = await fetch(`${API_BASE}/api/messages`, {
+      await apiFetch("/api/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(msgForm),
       });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Uplink terminal transmission failed");
 
       setSentSuccess(true);
       setMsgForm({ name: "", email: "", message: "" });
@@ -176,15 +172,10 @@ const Contact = ({ isAdmin }) => {
     },
   ];
 
-  // Fetch dynamic contacts from Supabase
+  // Fetch dynamic contacts from Express backend
   const fetchContactMethods = async () => {
     try {
-      const { data, error } = await supabase
-        .from("contact_methods")
-        .select("*")
-        .order("sort_order", { ascending: true });
-
-      if (error) throw error;
+      const data = await apiFetch("/api/contact");
       if (data && data.length > 0) {
         setContactCards(data);
       }
@@ -225,12 +216,10 @@ const Contact = ({ isAdmin }) => {
       };
 
       if (typeof cardId === "string" && cardId.length > 20) {
-        const { error } = await supabase
-          .from("contact_methods")
-          .update(updated)
-          .eq("id", cardId);
-
-        if (error) throw error;
+        await apiFetch(`/api/contact/${cardId}`, {
+          method: "PUT",
+          body: JSON.stringify(updated),
+        });
       }
 
       setContactCards((prev) => {
@@ -273,15 +262,13 @@ const Contact = ({ isAdmin }) => {
         sort_order: activeContacts.length + 1,
       };
 
-      const { data, error } = await supabase
-        .from("contact_methods")
-        .insert([insertPayload])
-        .select();
-
-      if (error) throw error;
+      const data = await apiFetch("/api/contact", {
+        method: "POST",
+        body: JSON.stringify(insertPayload),
+      });
 
       if (data) {
-        setContactCards((prev) => [...prev, data[0]]);
+        setContactCards((prev) => [...prev, data]);
         setNewContact({ title: "", jp_name: "", icon_type: "github", line: "", link: "", badge: "ACTIVE" });
         setAddFormOpen(false);
       }
@@ -297,12 +284,9 @@ const Contact = ({ isAdmin }) => {
 
     try {
       if (typeof cardId === "string" && cardId.length > 20) {
-        const { error } = await supabase
-          .from("contact_methods")
-          .delete()
-          .eq("id", cardId);
-
-        if (error) throw error;
+        await apiFetch(`/api/contact/${cardId}`, {
+          method: "DELETE",
+        });
       }
 
       setContactCards((prev) => {
