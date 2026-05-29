@@ -1,5 +1,5 @@
 -- ====================================================================
--- Ajay's 100% Dynamic Gaming HUD Portfolio Unified Database Blueprint
+-- Ajay's 100% Unified Gaming HUD Portfolio & CMS Database Blueprint
 -- Copy and paste this ENTIRE script into your Supabase SQL Editor!
 -- ====================================================================
 
@@ -7,11 +7,12 @@
 -- 1. Drop existing tables if they exist (for clean initialization)
 -- --------------------------------------------------------------------
 DROP TABLE IF EXISTS public.contact_messages CASCADE;
+DROP TABLE IF EXISTS public.blog_posts CASCADE;
 DROP TABLE IF EXISTS public.contact_methods CASCADE;
 DROP TABLE IF EXISTS public.education_objectives CASCADE;
-DROP TABLE IF EXISTS public.passive_skills CASCADE;
 DROP TABLE IF EXISTS public.achievements CASCADE;
 DROP TABLE IF EXISTS public.projects CASCADE;
+DROP TABLE IF EXISTS public.passive_skills CASCADE;
 DROP TABLE IF EXISTS public.skills CASCADE;
 DROP TABLE IF EXISTS public.profile_stats CASCADE;
 
@@ -20,44 +21,30 @@ DROP TABLE IF EXISTS public.profile_stats CASCADE;
 -- --------------------------------------------------------------------
 CREATE TABLE public.profile_stats (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    character_name TEXT NOT NULL DEFAULT 'AJAY',
-    level INTEGER NOT NULL DEFAULT 26,
-    xp_percent INTEGER NOT NULL DEFAULT 92,
-    class TEXT NOT NULL DEFAULT 'CSE STUDENT',
-    guild TEXT NOT NULL DEFAULT 'VVCE, VTU AFFILIATED',
-    hp_current INTEGER NOT NULL DEFAULT 980,
-    hp_max INTEGER NOT NULL DEFAULT 980,
-    mp_current INTEGER NOT NULL DEFAULT 920,
-    mp_max INTEGER NOT NULL DEFAULT 1000,
-    player_rank TEXT NOT NULL DEFAULT 'LV.26',
+    character_name TEXT NOT NULL DEFAULT 'YOUR_NAME',
+    level INTEGER NOT NULL DEFAULT 1,
+    xp_percent INTEGER NOT NULL DEFAULT 0,
+    class TEXT NOT NULL DEFAULT 'YOUR_CLASS',
+    guild TEXT NOT NULL DEFAULT 'YOUR_GUILD',
+    hp_current INTEGER NOT NULL DEFAULT 100,
+    hp_max INTEGER NOT NULL DEFAULT 100,
+    mp_current INTEGER NOT NULL DEFAULT 100,
+    mp_max INTEGER NOT NULL DEFAULT 100,
+    player_rank TEXT NOT NULL DEFAULT 'LV.1',
     
-    -- Expanded Dynamic CMS text fields
+    -- Dynamic CMS & Biography fields
     hero_greeting TEXT NOT NULL DEFAULT '[ STABLE_LINK // ONLINE ]',
     typewriter_words TEXT[] NOT NULL DEFAULT '{}',
     biography TEXT NOT NULL DEFAULT '',
+    
+    -- Main Quest Education Details
     education_school TEXT NOT NULL DEFAULT '',
     education_degree TEXT NOT NULL DEFAULT '',
     education_period TEXT NOT NULL DEFAULT '',
-    education_progress INTEGER NOT NULL DEFAULT 25,
+    education_progress INTEGER NOT NULL DEFAULT 0,
     education_progress_label TEXT NOT NULL DEFAULT '',
     
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- Seed initial stats + text fields
-INSERT INTO public.profile_stats (
-    character_name, level, xp_percent, class, guild, hp_current, hp_max, mp_current, mp_max, player_rank,
-    hero_greeting, typewriter_words, biography, education_school, education_degree, education_period, education_progress, education_progress_label
-) VALUES (
-    'AJAY', 26, 92, 'CSE STUDENT', 'VVCE, VTU AFFILIATED', 980, 980, 920, 1000, 'LV.26',
-    '[ STABLE_LINK // ONLINE ]',
-    ARRAY['Full Stack Developer', 'CSE Student @ VVCE', 'Anime Enthusiast', 'Game Dev Explorer'],
-    'I am a first-year B.E. Computer Science student at Vidyavardhaka College of Engineering (VVCE), Mysuru, affiliated with VTU. Deeply passionate about modern web technologies and full-stack architecture, I also enjoy exploring game development, diving into immersive anime worlds, and building sleek, responsive systems that bridge functional design with engaging storytelling.',
-    'VIDYAVARDHAKA COLLEGE OF ENGINEERING (VVCE), MYSURU',
-    'Bachelor of Engineering (B.E.) — Computer Science & Engineering',
-    'QUEST PERIOD: 2024 — 2028',
-    25,
-    '25% UNLOCKED (1ST YEAR COMPLETED)'
 );
 
 -- --------------------------------------------------------------------
@@ -67,28 +54,11 @@ CREATE TABLE public.skills (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     category TEXT NOT NULL, -- 'languages', 'frontend', 'backend', 'database', 'tools'
     name TEXT NOT NULL,
-    level INTEGER NOT NULL,
+    level INTEGER NOT NULL CHECK (level >= 0 AND level <= 100),
     description TEXT NOT NULL,
     sort_order INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
-
-INSERT INTO public.skills (category, name, level, description, sort_order) VALUES
-('languages', 'JavaScript', 90, 'Primary logic syntax for web scripts and interactive systems.', 1),
-('languages', 'Python', 85, 'Used for general computations, automation scripts, and backend prototypes.', 2),
-('languages', 'C Language', 80, 'Foundational syntax for memory structures and pointer algorithms.', 3),
-('frontend', 'React', 88, 'Standard client blueprint compiler for interactive SPA nodes.', 1),
-('frontend', 'Vite', 85, 'Modern frontend build engine with rapid virtual hot-reloading.', 2),
-('frontend', 'HTML5', 95, 'Structure markup parser for digital layouts and DOM frameworks.', 3),
-('frontend', 'CSS3', 90, 'Styling sheet compiler using responsive grids, shapes, and custom glows.', 4),
-('backend', 'Node.js', 80, 'Runtime compiler for executing JavaScript logic on the server mainframe.', 1),
-('backend', 'Express.js', 82, 'Routing server blueprint library for standard REST API endpoints.', 2),
-('database', 'Supabase', 85, 'Digital database cluster mapping custom authentication and tables.', 1),
-('database', 'PostgreSQL', 80, 'Relational database server using rigid schemas and secure logic queries.', 2),
-('database', 'MongoDB', 78, 'Document database storage using dynamic JSON schema models.', 3),
-('tools', 'Git', 85, 'Main version logger and branch management database tool.', 1),
-('tools', 'GitHub', 88, 'Remote terminal server for online repository backups.', 2),
-('tools', 'VS Code', 92, 'Primary IDE workspace styled with keybind maps and extensions.', 3);
 
 -- --------------------------------------------------------------------
 -- 4. Create passive_skills Table (Traits)
@@ -101,12 +71,6 @@ CREATE TABLE public.passive_skills (
     sort_order INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
-
-INSERT INTO public.passive_skills (name, jp_name, description, sort_order) VALUES
-('FAST LEARNER', '急速な学習', 'Adapting swiftly to novel system structures, coding stacks, and developer tools.', 1),
-('CREATIVE BUILDER', '創造的創造物', 'Architecting immersive designs, interactive HUD graphics, and detailed animations.', 2),
-('OTAKU CORE', 'オタク精神', 'Drawing inspiration from story-rich games, detailed manga, and complex anime themes.', 3),
-('PROBLEM SOLVER', '解決者', 'Approaching logic bugs and algorithmic hurdles with a systematic C/Python process.', 4);
 
 -- --------------------------------------------------------------------
 -- 5. Create projects Table (Quest logs - supports BOTH RPG and CMS schemas)
@@ -122,10 +86,10 @@ CREATE TABLE public.projects (
     thumbnail_url TEXT,
     date TEXT,
     
-    -- RPG Quest Columns (for backwards compatibility/bridge)
-    type TEXT NOT NULL DEFAULT 'MAIN QUEST',
+    -- RPG Quest Columns (for backwards compatibility/bridge mapping)
     name TEXT NOT NULL,
-    jp_name TEXT NOT NULL,
+    jp_name TEXT NOT NULL DEFAULT 'プロジェクト',
+    type TEXT NOT NULL DEFAULT 'MAIN QUEST', -- 'MAIN QUEST' or 'HACKATHON QUEST'
     status TEXT NOT NULL DEFAULT 'IN PROGRESS',
     difficulty TEXT NOT NULL DEFAULT 'MEDIUM',
     loot TEXT[] NOT NULL DEFAULT '{}',
@@ -134,42 +98,6 @@ CREATE TABLE public.projects (
     
     sort_order INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
-INSERT INTO public.projects (title, name, jp_name, description, tech_stack, loot, github_url, github, live_url, live, date, type, status, difficulty, sort_order) VALUES
-(
-  'CampusLink', 
-  'CampusLink',
-  'キャンパスリンク', 
-  'A comprehensive full-stack campus community web application custom engineered for Vidyavardhaka College of Engineering (VVCE) students. Features include an active peer Marketplace, Event coordinates, open discussion Forum boards, group messaging nodes, and personal Connection Wishlists.', 
-  ARRAY['React + Vite', 'Node.js', 'Express.js', 'Supabase', 'PostgreSQL'], 
-  ARRAY['React + Vite', 'Node.js', 'Express.js', 'Supabase', 'PostgreSQL'], 
-  'https://github.com/ajayotaku2-dev/CampusLink', 
-  'https://github.com/ajayotaku2-dev/CampusLink', 
-  '#', 
-  '#', 
-  '2024 - 2025',
-  'MAIN QUEST',
-  'IN PROGRESS',
-  'HARD',
-  1
-),
-(
-  'CampusFinance', 
-  'CampusFinance',
-  'キャンパスファイナンス', 
-  'A student-centric financial micro-budgeting dashboard built under tight hackathon timelines. Empowers students to log daily expenditures, track scholarship/grant allocations, and visualize monthly budgeting structures to curb college costs.', 
-  ARRAY['React', 'Node.js', 'Express.js', 'Supabase'], 
-  ARRAY['React', 'Node.js', 'Express.js', 'Supabase'], 
-  'https://github.com/ajayotaku2-dev/CampusFinance', 
-  'https://github.com/ajayotaku2-dev/CampusFinance', 
-  '#', 
-  '#', 
-  '2024',
-  'HACKATHON QUEST',
-  'IN PROGRESS',
-  'MEDIUM',
-  2
 );
 
 -- --------------------------------------------------------------------
@@ -187,10 +115,6 @@ CREATE TABLE public.achievements (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-INSERT INTO public.achievements (title, jp_name, award, date, xp_reward, description, sort_order) VALUES
-('THE BIG CODE — GOOGLE', 'コーディングチャレンジ参加者', 'Cleared Round 2 — Top 1,500 of 100,000+ nationally', 'APRIL 2026', '+1200 XP UNLOCKED', 'Competed in Google India''s The Big Code Challenge 2026, a national multi-stage coding elimination powered by HackerEarth. Advanced through the Qualifying Round and Round 1 to break into the Top 1,500 out of 100,000+ engineering students across India. Round 2 featured a high-stakes algorithmic coding showdown testing advanced DSA, problem-solving speed, and CS fundamentals under pressure.', 1),
-('HACKATHON PARTICIPANT', 'ハッカソン出場者', 'Designed & Assembled CampusFinance', 'OCTOBER 2024', '+500 XP UNLOCKED', 'Competed in an intense student hackathon sprint. Designed and assembled CampusFinance—a high-fidelity student-focused micro-budgeting web app. Effectively bridged a React interface layer with real-time Supabase analytics and authentication modules to streamline student financial tracking.', 2);
-
 -- --------------------------------------------------------------------
 -- 7. Create education_objectives Table
 -- --------------------------------------------------------------------
@@ -202,13 +126,8 @@ CREATE TABLE public.education_objectives (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-INSERT INTO public.education_objectives (objective_number, text, sort_order) VALUES
-('01', 'Acquire intermediate memory-addressing structures and pointer mapping in C and Python systems.', 1),
-('02', 'Formulate modular, non-blocking asynchronous REST pipelines using the React + Express stack.', 2),
-('03', 'Deconstruct computational logic constraints, discrete structures, and algorithms.', 3);
-
 -- --------------------------------------------------------------------
--- 8. Create contact_methods Table
+-- 8. Create contact_methods Table (Contact Uplinks)
 -- --------------------------------------------------------------------
 CREATE TABLE public.contact_methods (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -222,14 +141,22 @@ CREATE TABLE public.contact_methods (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-INSERT INTO public.contact_methods (title, jp_name, icon_type, line, link, badge, sort_order) VALUES
-('GITHUB UPLINK', 'ソースコード', 'github', '> HANDLE // TVAjay24', 'https://github.com/TVAjay24', 'CONNECTED', 1),
-('LINKEDIN NETWORK', 'プロフェッショナル', 'linkedin', '> PROFILE // T V Ajay', 'https://www.linkedin.com/in/t-v-ajay-b047013a5', 'CONNECTED', 2),
-('MAIL TERMINAL', 'メール', 'email', '> ADDRESS // tvajay0@gmail.com', 'mailto:tvajay0@gmail.com', 'ACTIVE', 3),
-('DIRECT COMM LINK', '電話番号', 'phone', '> NUMBER // +91 8050325644', 'tel:+918050325644', 'ACTIVE', 4);
+-- --------------------------------------------------------------------
+-- 9. Create blog_posts Table (Chronicles)
+-- --------------------------------------------------------------------
+CREATE TABLE public.blog_posts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title TEXT NOT NULL,
+    slug TEXT NOT NULL UNIQUE,
+    content TEXT NOT NULL, -- Markdown content
+    cover_image_url TEXT,
+    published_date TEXT,
+    is_draft BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
 
 -- --------------------------------------------------------------------
--- 9. Create contact_messages Table (Transmissions Inbox)
+-- 10. Create contact_messages Table (Visitor Transmissions)
 -- --------------------------------------------------------------------
 CREATE TABLE public.contact_messages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -239,15 +166,82 @@ CREATE TABLE public.contact_messages (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Seed initial transmission message
-INSERT INTO public.contact_messages (name, email, message)
-VALUES ('Asuka Langley', 'asuka@nerv.org', 'Hey Ajay! I checked out your Gaming HUD portfolio and it looks incredibly sick. Let''s collaborate on some cyberpunk web designs! /// SIGNAL_OUT');
-
 -- --------------------------------------------------------------------
--- 10. Configure Row Level Security (RLS) & Policies
+-- 11. Seed Table Records with Clearly Labeled Placeholders
 -- --------------------------------------------------------------------
 
--- Enable RLS
+-- Profile Stats Seed
+INSERT INTO public.profile_stats (
+    character_name, level, xp_percent, class, guild, hp_current, hp_max, mp_current, mp_max, player_rank,
+    hero_greeting, typewriter_words, biography, education_school, education_degree, education_period, education_progress, education_progress_label
+) VALUES (
+    'YOUR_NAME', 26, 92, 'YOUR_CLASS', 'YOUR_GUILD', 980, 980, 920, 1000, 'LV.26',
+    '[ STABLE_LINK // ONLINE ]',
+    ARRAY['YOUR_SKILL_1', 'YOUR_SKILL_2', 'YOUR_SKILL_3'],
+    'This is a placeholder narrative bio. Log in to the SYS_ADMIN cockpit (/admin) and update this biography segment to display your own custom story, quest campaign details, and development coordinates!',
+    'YOUR_SCHOOL_NAME',
+    'YOUR_DEGREE_AND_MAJOR',
+    'QUEST PERIOD: 2024 — 2028',
+    25,
+    '25% UNLOCKED (1ST YEAR COMPLETED)'
+);
+
+-- Skills Seed
+INSERT INTO public.skills (category, name, level, description, sort_order) VALUES
+('languages', 'JavaScript', 90, 'Placeholder technical skill description. Edit this row or dissolve it through the administrator panel.', 1);
+
+-- Passive Skills Seed
+INSERT INTO public.passive_skills (name, jp_name, description, sort_order) VALUES
+('FAST LEARNER', '急速な学習', 'Placeholder passive trait description. Swiftly acquiring novel programming language libraries.', 1);
+
+-- Projects Seed
+INSERT INTO public.projects (
+    title, description, tech_stack, live_url, github_url, thumbnail_url, date,
+    name, jp_name, type, status, difficulty, loot, github, live, sort_order
+) VALUES (
+    'PLACEHOLDER QUEST',
+    'This is a placeholder project description. You can seamlessly modify, update, or dissolve this quest log through the secure administrator panel.',
+    ARRAY['React', 'Node.js', 'Supabase'],
+    'https://YOUR_LIVE_URL.com',
+    'https://github.com/TVAjay24/YOUR_REPO_NAME',
+    'https://images.unsplash.com/photo-1555066931-4365d14bab8c',
+    '2025 - 2026',
+    'PLACEHOLDER QUEST',
+    'プレースホルダー',
+    'MAIN QUEST',
+    'IN PROGRESS',
+    'MEDIUM',
+    ARRAY['React', 'Node.js', 'Supabase'],
+    'https://github.com/TVAjay24/YOUR_REPO_NAME',
+    'https://YOUR_LIVE_URL.com',
+    1
+);
+
+-- Achievements Seed
+INSERT INTO public.achievements (title, jp_name, award, date, xp_reward, description, sort_order) VALUES
+('THE BIG CODE', 'チャレンジ達成', 'Cleared challenge parameters successfully', 'MAY 2026', '+1000 XP UNLOCKED', 'This is a placeholder award. Double-click the LV.26 shield badge to log into the Admin Cockpit and inject your actual career trophies and certifications.', 1);
+
+-- Education Objectives Seed
+INSERT INTO public.education_objectives (objective_number, text, sort_order) VALUES
+('01', 'Placeholder objective text. Acquire foundations in memory architecture and full-stack API networks.', 1);
+
+-- Contact Methods Seed
+INSERT INTO public.contact_methods (title, jp_name, icon_type, line, link, badge, sort_order) VALUES
+('GITHUB UPLINK', 'ソースコード', 'github', '> HANDLE // TVAjay24', 'https://github.com/TVAjay24', 'CONNECTED', 1);
+
+-- Blog Posts Seed
+INSERT INTO public.blog_posts (title, slug, content, cover_image_url, published_date, is_draft) VALUES
+('Placeholder Chronicle', 'placeholder-chronicle', '# Welcome to your Chronicles\n\nThis is a placeholder markdown blog post. Access the Admin Cockpit to publish real articles!', 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b', 'MAY 2026', true);
+
+-- Contact Messages Seed
+INSERT INTO public.contact_messages (name, email, message) VALUES
+('Asuka Langley', 'asuka@nerv.org', 'Hey Ajay! This is a secure visitor transmission system check. /// SIGNAL_OUT');
+
+-- --------------------------------------------------------------------
+-- 12. Configure Row Level Security (RLS) & Policies
+-- --------------------------------------------------------------------
+
+-- Enable Row Level Security (RLS) on all tables
 ALTER TABLE public.profile_stats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.skills ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.passive_skills ENABLE ROW LEVEL SECURITY;
@@ -255,9 +249,10 @@ ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.achievements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.education_objectives ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contact_methods ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.blog_posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contact_messages ENABLE ROW LEVEL SECURITY;
 
--- 10a. Public Read Access Policies (Allow anyone to view your portfolio data)
+-- 12a. Public READ (SELECT) Policies for Public Consumption
 CREATE POLICY "Allow public read access for profile_stats" ON public.profile_stats FOR SELECT USING (true);
 CREATE POLICY "Allow public read access for skills" ON public.skills FOR SELECT USING (true);
 CREATE POLICY "Allow public read access for passive_skills" ON public.passive_skills FOR SELECT USING (true);
@@ -265,8 +260,9 @@ CREATE POLICY "Allow public read access for projects" ON public.projects FOR SEL
 CREATE POLICY "Allow public read access for achievements" ON public.achievements FOR SELECT USING (true);
 CREATE POLICY "Allow public read access for education_objectives" ON public.education_objectives FOR SELECT USING (true);
 CREATE POLICY "Allow public read access for contact_methods" ON public.contact_methods FOR SELECT USING (true);
+CREATE POLICY "Allow public read access for blog_posts" ON public.blog_posts FOR SELECT USING (true);
 
--- 10b. Authenticated Write Access Policies (Restricts database changes exclusively to your Admin session)
+-- 12b. Authenticated WRITE (ALL) Policies for Administration
 CREATE POLICY "Allow authenticated admin writes for profile_stats" ON public.profile_stats FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated admin writes for skills" ON public.skills FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated admin writes for passive_skills" ON public.passive_skills FOR ALL TO authenticated USING (true) WITH CHECK (true);
@@ -274,9 +270,11 @@ CREATE POLICY "Allow authenticated admin writes for projects" ON public.projects
 CREATE POLICY "Allow authenticated admin writes for achievements" ON public.achievements FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated admin writes for education_objectives" ON public.education_objectives FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated admin writes for contact_methods" ON public.contact_methods FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow authenticated admin writes for blog_posts" ON public.blog_posts FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
--- 10c. Contact Messages Security Setup (Visitor Transmissions)
--- Anyone can insert a message, but only the authenticated admin can read or delete them
+-- 12c. Contact Messages Policies (Visitor Transmissions)
+-- Public can only INSERT (send messages)
 CREATE POLICY "Allow public insert for contact_messages" ON public.contact_messages FOR INSERT WITH CHECK (true);
+-- Authenticated admins can SELECT (read) and DELETE (dissolve) transmissions
 CREATE POLICY "Allow authenticated admin read for contact_messages" ON public.contact_messages FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow authenticated admin delete for contact_messages" ON public.contact_messages FOR DELETE TO authenticated USING (true);
