@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
-import { Terminal, Lock, Mail, Compass, Award, ShieldAlert, Check, Plus, Trash2, Edit, LogOut, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Terminal, Lock, Mail, Compass, Award, ShieldAlert, Check, Plus, Trash2, Edit, LogOut, ArrowLeft, X } from "lucide-react";
+
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [session, setSession] = useState(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -122,6 +125,7 @@ const AdminDashboard = () => {
     sessionStorage.removeItem("admin_session");
     window.dispatchEvent(new Event("admin_auth_change"));
     setSession(null);
+    navigate("/");
   };
 
   // ==========================================
@@ -191,11 +195,16 @@ const AdminDashboard = () => {
         <div className="cyber-grid" />
         <div className="hud-panel cyber-scanlines glitch-border" style={{ width: "100%", maxWidth: "420px", background: "var(--bg-panel-solid)", padding: "32px", zIndex: 10 }}>
           <div className="hud-panel-bottom" />
-          <div style={{ display: "flex", gap: "8px", alignItems: "center", borderBottom: "1px solid rgba(0, 210, 255, 0.2)", paddingBottom: "12px", marginBottom: "20px" }}>
-            <Terminal size={18} style={{ color: "var(--accent-purple)" }} />
-            <span style={{ fontFamily: "var(--font-hud)", fontSize: "0.95rem", letterSpacing: "2px", fontWeight: "700", color: "#fff" }}>
-              AJAY_CMS_COCKPIT
-            </span>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(0, 210, 255, 0.2)", paddingBottom: "12px", marginBottom: "20px" }}>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <Terminal size={18} style={{ color: "var(--accent-purple)" }} />
+              <span style={{ fontFamily: "var(--font-hud)", fontSize: "0.95rem", letterSpacing: "2px", fontWeight: "700", color: "#fff" }}>
+                AJAY_CMS_COCKPIT
+              </span>
+            </div>
+            <button type="button" onClick={() => navigate("/")} className="hud-btn" style={{ padding: "4px 10px", fontSize: "0.6rem", display: "flex", alignItems: "center", gap: "4px" }}>
+              <ArrowLeft size={10} /> BACK
+            </button>
           </div>
 
           <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -261,11 +270,9 @@ const AdminDashboard = () => {
           </div>
           
           <div style={{ display: "flex", gap: "12px" }}>
-            <a href="/" style={{ textDecoration: "none" }}>
-              <button className="hud-btn" style={{ padding: "8px 16px", fontSize: "0.7rem", display: "flex", alignItems: "center", gap: "6px" }}>
-                <ArrowLeft size={12} /> BACK_TO_SITE
-              </button>
-            </a>
+            <button onClick={() => navigate("/")} className="hud-btn" style={{ padding: "8px 16px", fontSize: "0.7rem", display: "flex", alignItems: "center", gap: "6px" }}>
+              <ArrowLeft size={12} /> BACK_TO_SITE
+            </button>
             <button onClick={handleLogout} className="hud-btn hud-btn-purple" style={{ padding: "8px 16px", fontSize: "0.7rem", display: "flex", alignItems: "center", gap: "6px" }}>
               <LogOut size={12} /> LOG_OUT
             </button>
