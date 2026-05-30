@@ -84,6 +84,15 @@ const AboutMe = ({ isAdmin }) => {
     if (!localProfile) {
       localStorage.setItem("portfolio_profile", JSON.stringify(defaultStats));
       localProfile = JSON.stringify(defaultStats);
+    } else {
+      try {
+        const parsed = JSON.parse(localProfile);
+        if (parsed.character_name === "AJAY") {
+          parsed.character_name = "T V AJAY";
+          localStorage.setItem("portfolio_profile", JSON.stringify(parsed));
+          localProfile = JSON.stringify(parsed);
+        }
+      } catch (e) {}
     }
     try {
       const parsedStats = JSON.parse(localProfile);
