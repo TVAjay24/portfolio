@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import RevealSection from "./RevealSection";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../supabase";
-import { apiFetch } from "../api";
-import { Code, Terminal, Server, Database, Settings, Trash2, Plus, Check, X, Edit } from "lucide-react";
+import { Code, Terminal, Server, Database, Settings, Trash2, Plus, Check, X } from "lucide-react";
 
 const Skills = ({ isAdmin }) => {
   const [activeCat, setActiveCat] = useState("languages");
@@ -16,10 +15,6 @@ const Skills = ({ isAdmin }) => {
   const [newSkillDesc, setNewSkillDesc] = useState("");
   const [formOpen, setFormOpen] = useState(false);
 
-  // Admin state for editing skills inline
-  const [editingSkillId, setEditingSkillId] = useState(null);
-  const [editSkillForm, setEditSkillForm] = useState({ name: "", level: 80, description: "" });
-
   const categories = [
     { id: "languages", name: "LANGUAGES", icon: Terminal, jpName: "言語" },
     { id: "frontend", name: "FRONTEND", icon: Code, jpName: "フロント" },
@@ -31,36 +26,41 @@ const Skills = ({ isAdmin }) => {
   // Static fallback data to guarantee visual safety during setup
   const staticFallback = {
     languages: [
-      { id: "lang_js", category: "languages", name: "JavaScript", level: 90, description: "Primary logic syntax for web scripts and interactive systems." },
-      { id: "lang_py", category: "languages", name: "Python", level: 85, description: "Used for general computations, automation scripts, and backend prototypes." },
-      { id: "lang_c", category: "languages", name: "C Language", level: 80, description: "Foundational syntax for memory structures and pointer algorithms." },
+      { name: "JavaScript", level: 90, description: "Primary logic syntax for web scripts and interactive systems." },
+      { name: "Python", level: 85, description: "Used for general computations, automation scripts, and backend prototypes." },
+      { name: "C Language", level: 80, description: "Foundational syntax for memory structures and pointer algorithms." },
     ],
     frontend: [
-      { id: "front_react", category: "frontend", name: "React", level: 88, description: "Standard client blueprint compiler for interactive SPA nodes." },
-      { id: "front_vite", category: "frontend", name: "Vite", level: 85, description: "Modern frontend build engine with rapid virtual hot-reloading." },
-      { id: "front_html", category: "frontend", name: "HTML5", level: 95, description: "Structure markup parser for digital layouts and DOM frameworks." },
-      { id: "front_css", category: "frontend", name: "CSS3", level: 90, description: "Styling sheet compiler using responsive grids, shapes, and custom glows." },
+      { name: "React", level: 88, description: "Standard client blueprint compiler for interactive SPA nodes." },
+      { name: "Vite", level: 85, description: "Modern frontend build engine with rapid virtual hot-reloading." },
+      { name: "HTML5", level: 95, description: "Structure markup parser for digital layouts and DOM frameworks." },
+      { name: "CSS3", level: 90, description: "Styling sheet compiler using responsive grids, shapes, and custom glows." },
     ],
     backend: [
-      { id: "back_node", category: "backend", name: "Node.js", level: 80, description: "Runtime compiler for executing JavaScript logic on the server mainframe." },
-      { id: "back_express", category: "backend", name: "Express.js", level: 82, description: "Routing server blueprint library for standard REST API endpoints." },
+      { name: "Node.js", level: 80, description: "Runtime compiler for executing JavaScript logic on the server mainframe." },
+      { name: "Express.js", level: 82, description: "Routing server blueprint library for standard REST API endpoints." },
     ],
     database: [
-      { id: "db_supabase", category: "database", name: "Supabase", level: 85, description: "Digital database cluster mapping custom authentication and tables." },
-      { id: "db_postgres", category: "database", name: "PostgreSQL", level: 80, description: "Relational database server using rigid schemas and secure logic queries." },
-      { id: "db_mongo", category: "database", name: "MongoDB", level: 78, description: "Document database storage using dynamic JSON schema models." },
+      { name: "Supabase", level: 85, description: "Digital database cluster mapping custom authentication and tables." },
+      { name: "PostgreSQL", level: 80, description: "Relational database server using rigid schemas and secure logic queries." },
+      { name: "MongoDB", level: 78, description: "Document database storage using dynamic JSON schema models." },
     ],
     tools: [
-      { id: "tool_git", category: "tools", name: "Git", level: 85, description: "Main version logger and branch management database tool." },
-      { id: "tool_github", category: "tools", name: "GitHub", level: 88, description: "Remote terminal server for online repository backups." },
-      { id: "tool_vscode", category: "tools", name: "VS Code", level: 92, description: "Primary IDE workspace styled with keybind maps and extensions." },
+      { name: "Git", level: 85, description: "Main version logger and branch management database tool." },
+      { name: "GitHub", level: 88, description: "Remote terminal server for online repository backups." },
+      { name: "VS Code", level: 92, description: "Primary IDE workspace styled with keybind maps and extensions." },
     ],
   };
 
-  // Fetch real-time skills from Express API
+  // Fetch real-time skills from Supabase
   const fetchSkills = async () => {
     try {
-      const data = await apiFetch("/api/skills");
+      const { data, error } = await supabase
+        .from("skills")
+        .select("*")
+        .order("sort_order", { ascending: true });
+
+      if (error) throw error;
       if (data && data.length > 0) {
         setSkills(data);
       }
@@ -81,7 +81,7 @@ const Skills = ({ isAdmin }) => {
     return dbFiltered.length > 0 ? dbFiltered : staticFallback[catId];
   };
 
-  // Add new skill node in active category via Express API
+  // Add new skill node in active category
   const handleAddSkill = async (e) => {
     e.preventDefault();
     if (!newSkillName.trim()) return;
@@ -96,13 +96,15 @@ const Skills = ({ isAdmin }) => {
         sort_order: categorySkills.length + 1,
       };
 
-      const data = await apiFetch("/api/skills", {
-        method: "POST",
-        body: JSON.stringify(newSkill)
-      });
+      const { data, error } = await supabase
+        .from("skills")
+        .insert([newSkill])
+        .select();
+
+      if (error) throw error;
 
       if (data) {
-        setSkills((prev) => [...prev, data]);
+        setSkills((prev) => [...prev, data[0]]);
         setNewSkillName("");
         setNewSkillDesc("");
         setNewSkillLevel(80);
@@ -113,100 +115,21 @@ const Skills = ({ isAdmin }) => {
     }
   };
 
-  // Remove skill node via Express API
+  // Remove skill node
   const handleDeleteSkill = async (skillId, skillName) => {
     if (!window.confirm(`DISSOLVE ABILITY NODE: "${skillName}"?`)) return;
 
     try {
-      if (typeof skillId === "string" && skillId.length > 20) {
-        await apiFetch(`/api/skills/${skillId}`, {
-          method: "DELETE"
-        });
-        setSkills((prev) => prev.filter((s) => s.id !== skillId));
-      } else {
-        // Deleting a static skill card:
-        // Populate skills state with all static fallback values across all categories, except the deleted one
-        setSkills((prev) => {
-          let listToFilter = prev;
-          if (prev.length === 0) {
-            listToFilter = [
-              ...staticFallback.languages,
-              ...staticFallback.frontend,
-              ...staticFallback.backend,
-              ...staticFallback.database,
-              ...staticFallback.tools
-            ];
-          }
-          return listToFilter.filter((s) => s.id !== skillId);
-        });
-      }
+      const { error } = await supabase
+        .from("skills")
+        .delete()
+        .eq("id", skillId);
+
+      if (error) throw error;
+
+      setSkills((prev) => prev.filter((s) => s.id !== skillId));
     } catch (err) {
       alert("Failed to delete skill: " + err.message);
-    }
-  };
-
-  // Inline edit handlers
-  const handleEditClick = (s) => {
-    setEditingSkillId(s.id);
-    setEditSkillForm({
-      name: s.name,
-      level: s.level,
-      description: s.description || "",
-    });
-  };
-
-  const handleSaveSkillEdit = async (skillId) => {
-    try {
-      const updatedSkill = {
-        category: activeCat,
-        name: editSkillForm.name.trim(),
-        level: parseInt(editSkillForm.level),
-        description: editSkillForm.description.trim(),
-      };
-
-      if (typeof skillId === "string" && skillId.length > 20) {
-        // Real DB Skill: update it
-        const data = await apiFetch(`/api/skills/${skillId}`, {
-          method: "PUT",
-          body: JSON.stringify(updatedSkill)
-        });
-
-        // Sync local state
-        setSkills((prev) => {
-          return prev.map((s) => (s.id === skillId ? data : s));
-        });
-      } else {
-        // Static Skill edited: insert it as a dynamic skill so it becomes database persistent!
-        const categorySkills = skills.filter((s) => s.category === activeCat);
-        updatedSkill.sort_order = categorySkills.length + 1;
-
-        const data = await apiFetch("/api/skills", {
-          method: "POST",
-          body: JSON.stringify(updatedSkill)
-        });
-
-        if (data) {
-          // If skills was empty, we should initialize it with static fallbacks first, so they don't disappear
-          setSkills((prev) => {
-            let listToUpdate = prev;
-            if (prev.length === 0) {
-              listToUpdate = [
-                ...staticFallback.languages,
-                ...staticFallback.frontend,
-                ...staticFallback.backend,
-                ...staticFallback.database,
-                ...staticFallback.tools
-              ];
-            }
-            // Replace the edited static item with the new dynamic DB one, so it has a real UUID now!
-            return listToUpdate.map((s) => (s.id === skillId ? data : s));
-          });
-        }
-      }
-
-      setEditingSkillId(null);
-    } catch (err) {
-      alert("Database error: " + err.message);
     }
   };
 
@@ -303,164 +226,83 @@ const Skills = ({ isAdmin }) => {
                   gap: "20px",
                 }}
               >
-                {activeSkillsList.map((skill, idx) => {
-                  const isEditing = editingSkillId === skill.id;
+                {activeSkillsList.map((skill, idx) => (
+                  <div
+                    key={skill.id || idx}
+                    className="hud-panel cyber-scanlines"
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "12px",
+                      padding: "20px",
+                      borderLeft: `3px solid ${activeCat === "frontend" || activeCat === "languages" ? "var(--accent-cyan)" : "var(--accent-purple)"}`,
+                    }}
+                  >
+                    <div className="hud-panel-bottom" />
 
-                  return (
-                    <div
-                      key={skill.id || idx}
-                      className="hud-panel cyber-scanlines"
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "12px",
-                        padding: "20px",
-                        borderLeft: `3px solid ${activeCat === "frontend" || activeCat === "languages" ? "var(--accent-cyan)" : "var(--accent-purple)"}`,
-                      }}
-                    >
-                      <div className="hud-panel-bottom" />
-
-                      {isEditing ? (
-                        /* Inline Edit Mode Form */
-                        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                            <label style={{ fontSize: "0.65rem", color: "var(--text-secondary)" }}>NODE NAME</label>
-                            <input
-                              type="text"
-                              value={editSkillForm.name}
-                              onChange={(e) => setEditSkillForm({ ...editSkillForm, name: e.target.value })}
-                              style={{ background: "rgba(0,0,0,0.8)", border: "1px solid rgba(0,210,255,0.2)", color: "#fff", padding: "6px", fontSize: "0.8rem", outline: "none" }}
-                            />
-                          </div>
-
-                          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                            <label style={{ fontSize: "0.65rem", color: "var(--text-secondary)", display: "flex", justifyContent: "space-between" }}>
-                              <span>LEVEL</span>
-                              <span>{editSkillForm.level}%</span>
-                            </label>
-                            <input
-                              type="range"
-                              min="10"
-                              max="100"
-                              value={editSkillForm.level}
-                              onChange={(e) => setEditSkillForm({ ...editSkillForm, level: parseInt(e.target.value) })}
-                              style={{ width: "100%", accentColor: "var(--accent-cyan)", cursor: "pointer" }}
-                            />
-                          </div>
-
-                          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                            <label style={{ fontSize: "0.65rem", color: "var(--text-secondary)" }}>DESCRIPTION</label>
-                            <textarea
-                              value={editSkillForm.description}
-                              onChange={(e) => setEditSkillForm({ ...editSkillForm, description: e.target.value })}
-                              rows="2"
-                              style={{ background: "rgba(0,0,0,0.8)", border: "1px solid rgba(0,210,255,0.2)", color: "#fff", padding: "6px", fontSize: "0.78rem", outline: "none", resize: "none" }}
-                            />
-                          </div>
-
-                          <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
-                            <button
-                              onClick={() => handleSaveSkillEdit(skill.id)}
-                              className="hud-btn"
-                              style={{ padding: "4px 8px", fontSize: "0.65rem", display: "flex", alignItems: "center", gap: "4px" }}
-                            >
-                              <Check size={10} /> SAVE
-                            </button>
-                            <button
-                              onClick={() => setEditingSkillId(null)}
-                              className="hud-btn hud-btn-purple"
-                              style={{ padding: "4px 8px", fontSize: "0.65rem", display: "flex", alignItems: "center", gap: "4px" }}
-                            >
-                              <X size={10} /> CANCEL
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        /* Static Reading Mode Card */
-                        <>
-                          {/* Node Heading */}
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span style={{ fontFamily: "var(--font-hud)", fontSize: "0.95rem", letterSpacing: "1px", fontWeight: "700" }}>
-                              {skill.name}
-                            </span>
-                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                              <span
-                                style={{
-                                  fontFamily: "var(--font-hud)",
-                                  fontSize: "0.75rem",
-                                  color: activeCat === "frontend" || activeCat === "languages" ? "var(--accent-cyan)" : "var(--accent-purple)",
-                                  fontWeight: "900",
-                                  textShadow: activeCat === "frontend" || activeCat === "languages" ? "var(--neon-glow-cyan)" : "var(--neon-glow-purple)",
-                                }}
-                              >
-                                LV. {skill.level}
-                              </span>
-                              {isAdmin && skill.id && (
-                                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                                  <button
-                                    onClick={() => handleEditClick(skill)}
-                                    style={{
-                                      background: "transparent",
-                                      border: "none",
-                                      cursor: "pointer",
-                                      color: "var(--accent-cyan)",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      padding: 0,
-                                    }}
-                                    title="EDIT NODE"
-                                  >
-                                    <Edit size={12} />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteSkill(skill.id, skill.name)}
-                                    style={{
-                                      background: "transparent",
-                                      border: "none",
-                                      cursor: "pointer",
-                                      color: "#ff4a4a",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      padding: 0,
-                                    }}
-                                    title="DISSOLVE NODE"
-                                  >
-                                    <Trash2 size={12} />
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Level Progress Gauge Bar */}
-                          <div>
-                            <div className="hud-bar-container" style={{ height: "8px" }}>
-                              <div
-                                className={`hud-bar-fill ${activeCat === "frontend" || activeCat === "languages" ? "" : "hud-bar-fill-purple"}`}
-                                style={{ width: `${skill.level}%` }}
-                              />
-                            </div>
-                          </div>
-
-                          {/* Skill Context Description */}
-                          <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
-                            {skill.description}
-                          </p>
-
-                          {/* Micro crosshair decorative visualizer */}
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", opacity: 0.4 }}>
-                            <span style={{ fontFamily: "var(--font-hud)", fontSize: "0.55rem", color: "var(--text-muted)" }}>
-                              ID: {skill.id ? skill.id.slice(0, 8) : `STATIC_0${idx + 1}`}
-                            </span>
-                            <span style={{ fontFamily: "var(--font-hud)", fontSize: "0.5rem" }}>
-                              [ SYS_OK // NOD_0{idx + 1} ]
-                            </span>
-                          </div>
-                        </>
-                      )}
+                    {/* Node Heading */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontFamily: "var(--font-hud)", fontSize: "0.95rem", letterSpacing: "1px", fontWeight: "700" }}>
+                        {skill.name}
+                      </span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span
+                          style={{
+                            fontFamily: "var(--font-hud)",
+                            fontSize: "0.75rem",
+                            color: activeCat === "frontend" || activeCat === "languages" ? "var(--accent-cyan)" : "var(--accent-purple)",
+                            fontWeight: "900",
+                            textShadow: activeCat === "frontend" || activeCat === "languages" ? "var(--neon-glow-cyan)" : "var(--neon-glow-purple)",
+                          }}
+                        >
+                          LV. {skill.level}
+                        </span>
+                        {isAdmin && skill.id && (
+                          <button
+                            onClick={() => handleDeleteSkill(skill.id, skill.name)}
+                            style={{
+                              background: "transparent",
+                              border: "none",
+                              cursor: "pointer",
+                              color: "#ff4a4a",
+                              display: "flex",
+                              alignItems: "center",
+                              padding: 0,
+                            }}
+                            title="DISSOLVE NODE"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  );
-                })}
+
+                    {/* Level Progress Gauge Bar */}
+                    <div>
+                      <div className="hud-bar-container" style={{ height: "8px" }}>
+                        <div
+                          className={`hud-bar-fill ${activeCat === "frontend" || activeCat === "languages" ? "" : "hud-bar-fill-purple"}`}
+                          style={{ width: `${skill.level}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Skill Context Description */}
+                    <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                      {skill.description}
+                    </p>
+
+                    {/* Micro crosshair decorative visualizer */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", opacity: 0.4 }}>
+                      <span style={{ fontFamily: "var(--font-hud)", fontSize: "0.55rem", color: "var(--text-muted)" }}>
+                        ID: {skill.id ? skill.id.slice(0, 8) : `STATIC_0${idx + 1}`}
+                      </span>
+                      <span style={{ fontFamily: "var(--font-hud)", fontSize: "0.5rem" }}>
+                        [ SYS_OK // NOD_0{idx + 1} ]
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               {/* Admin Form: Add New Skill */}

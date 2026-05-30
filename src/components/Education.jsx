@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import RevealSection from "./RevealSection";
-import { apiFetch } from "../api";
+import { supabase } from "../supabase";
 import { GraduationCap, Landmark, CheckSquare, Bookmark, Compass, Edit, Check, X, Plus, Trash2 } from "lucide-react";
 
 const Education = ({ isAdmin }) => {
@@ -40,7 +40,13 @@ const Education = ({ isAdmin }) => {
   // Fetch dynamic education details
   const fetchEduDetails = async () => {
     try {
-      const data = await apiFetch("/api/profile");
+      const { data, error } = await supabase
+        .from("profile_stats")
+        .select("education_school, education_degree, education_period, education_progress, education_progress_label")
+        .limit(1)
+        .single();
+
+      if (error) throw error;
       if (data && data.education_school) {
         setEduStats(data);
       }
@@ -52,7 +58,12 @@ const Education = ({ isAdmin }) => {
   // Fetch dynamic objectives checklist
   const fetchObjectives = async () => {
     try {
-      const data = await apiFetch("/api/education");
+      const { data, error } = await supabase
+        .from("education_objectives")
+        .select("*")
+        .order("sort_order", { ascending: true });
+
+      if (error) throw error;
       if (data && data.length > 0) {
         setObjectives(data);
       }
@@ -83,12 +94,14 @@ const Education = ({ isAdmin }) => {
         education_progress_label: cardForm.education_progress_label.trim() || eduStats.education_progress_label,
       };
 
-      await apiFetch("/api/profile", {
-        method: "PUT",
-        body: JSON.stringify(updated),
-      });
+      const { error } = await supabase
+        .from("profile_stats")
+        .update(updated)
+        .eq("character_name", "AJAY");
 
-      setEduStats((prev) => ({ ...prev, ...updated }));
+      if (error) throw error;
+
+      setEduStats(updated);
       setIsEditingCard(false);
     } catch (err) {
       alert("Database error: " + err.message);
@@ -115,10 +128,12 @@ const Education = ({ isAdmin }) => {
   const handleSaveObj = async (objId) => {
     try {
       if (typeof objId === "string" && objId.length > 20) {
-        await apiFetch(`/api/education/${objId}`, {
-          method: "PUT",
-          body: JSON.stringify({ text: objTextVal }),
-        });
+        const { error } = await supabase
+          .from("education_objectives")
+          .update({ text: objTextVal })
+          .eq("id", objId);
+
+        if (error) throw error;
       }
 
       setObjectives((prev) => {
@@ -146,13 +161,15 @@ const Education = ({ isAdmin }) => {
         sort_order: activeObjs.length + 1,
       };
 
-      const data = await apiFetch("/api/education", {
-        method: "POST",
-        body: JSON.stringify(newObj),
-      });
+      const { data, error } = await supabase
+        .from("education_objectives")
+        .insert([newObj])
+        .select();
+
+      if (error) throw error;
 
       if (data) {
-        setObjectives((prev) => [...prev, data]);
+        setObjectives((prev) => [...prev, data[0]]);
         setNewObjText("");
         setAddObjOpen(false);
       }
@@ -166,9 +183,12 @@ const Education = ({ isAdmin }) => {
 
     try {
       if (typeof objId === "string" && objId.length > 20) {
-        await apiFetch(`/api/education/${objId}`, {
-          method: "DELETE",
-        });
+        const { error } = await supabase
+          .from("education_objectives")
+          .delete()
+          .eq("id", objId);
+
+        if (error) throw error;
       }
 
       setObjectives((prev) => prev.filter((o) => o.id !== objId));

@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import RevealSection from "./RevealSection";
 import { supabase } from "../supabase";
-import { apiFetch } from "../api";
 import { ExternalLink, Trophy, Compass, Edit, Check, X, Star, Plus, Trash2 } from "lucide-react";
+
+export const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+  ? "http://localhost:3000"
+  : (import.meta.env.VITE_API_BASE || "");
 
 const GithubIcon = ({ size = 16, className }) => (
   <svg
@@ -79,10 +82,12 @@ const Projects = ({ isAdmin }) => {
     },
   ];
 
-  // Fetch real-time projects/quests from dynamic Express API
+  // Fetch real-time projects/quests from dynamic Express API mainframe
   const fetchProjects = async () => {
     try {
-      const data = await apiFetch("/api/projects");
+      const response = await fetch(`${API_BASE}/api/projects`);
+      if (!response.ok) throw new Error("API responded with an error");
+      const data = await response.json();
       if (data && data.length > 0) {
         // Map columns dynamically to be compatible with both schema.sql and schema_cms.sql structures
         const mappedData = data.map((p) => ({
@@ -133,35 +138,32 @@ const Projects = ({ isAdmin }) => {
   const handleSaveQuest = async (projectId) => {
     try {
       const updatedProject = {
-        title: editForm.name,
         name: editForm.name,
         jp_name: editForm.jp_name,
         type: editForm.type,
         difficulty: editForm.difficulty,
         status: editForm.status,
         description: editForm.description,
-        tech_stack: editForm.loot.split(",").map((t) => t.trim()).filter(Boolean),
         loot: editForm.loot.split(",").map((t) => t.trim()).filter(Boolean),
-        github_url: editForm.github,
         github: editForm.github,
-        live_url: editForm.live,
         live: editForm.live,
       };
 
       // Only attempt write if ID is standard uuid (i.e. not static fallback string)
       if (typeof projectId === "string" && projectId.length > 20) {
-        await apiFetch(`/api/projects/${projectId}`, {
-          method: "PUT",
-          body: JSON.stringify(updatedProject)
-        });
+        const { error } = await supabase
+          .from("projects")
+          .update(updatedProject)
+          .eq("id", projectId);
+
+        if (error) throw error;
       }
 
       // Sync local state
       setProjectsList((prev) => {
         const listToMap = prev.length > 0 ? prev : staticFallback;
         return listToMap.map((p) => (p.id === projectId ? { ...p, ...updatedProject } : p));
-      });
-      setEditingProjectId(null);
+      });      setEditingProjectId(null);
     } catch (err) {
       alert("Database error: " + err.message);
     }
@@ -174,41 +176,27 @@ const Projects = ({ isAdmin }) => {
     try {
       const activeQuests = getProjects();
       const insertPayload = {
-        title: newQuest.name.trim(),
         name: newQuest.name.trim(),
         jp_name: newQuest.jp_name.trim() || "クエスト",
         type: newQuest.type,
         difficulty: newQuest.difficulty,
         status: newQuest.status,
         description: newQuest.description.trim() || "Synthesizing quest parameters...",
-        tech_stack: newQuest.loot.split(",").map((l) => l.trim()).filter(Boolean),
         loot: newQuest.loot.split(",").map((l) => l.trim()).filter(Boolean),
-        github_url: newQuest.github.trim() || "#",
         github: newQuest.github.trim() || "#",
-        live_url: newQuest.live.trim() || "#",
         live: newQuest.live.trim() || "#",
         sort_order: activeQuests.length + 1,
       };
 
-      const data = await apiFetch("/api/projects", {
-        method: "POST",
-        body: JSON.stringify(insertPayload)
-      });
+      const { data, error } = await supabase
+        .from("projects")
+        .insert([insertPayload])
+        .select();
+
+      if (error) throw error;
 
       if (data) {
-        setProjectsList((prev) => [...prev, {
-          id: data.id,
-          name: data.name || data.title || "",
-          jp_name: data.jp_name || data.title || "プロジェクト",
-          type: data.type || "MAIN QUEST",
-          difficulty: data.difficulty || "MEDIUM",
-          status: data.status || "IN PROGRESS",
-          description: data.description || "",
-          loot: data.loot || data.tech_stack || [],
-          github: data.github || data.github_url || "#",
-          live: data.live || data.live_url || "#",
-          sort_order: data.sort_order || 0,
-        }]);
+        setProjectsList((prev) => [...prev, data[0]]);
         setNewQuest({
           name: "",
           jp_name: "",
@@ -232,13 +220,20 @@ const Projects = ({ isAdmin }) => {
 
     try {
       if (typeof projectId === "string" && projectId.length > 20) {
-        await apiFetch(`/api/projects/${projectId}`, {
-          method: "DELETE"
-        });
+        const { error } = await supabase
+          .from("projects")
+          .delete()
+          .eq("id", projectId);
+
+        if (error) throw error;
       }
-      setProjectsList((prev) => prev.filter((p) => p.id !== projectId));
+
+      setProjectsList((prev) => {
+        const listToFilter = prev.length > 0 ? prev : staticFallback;
+        return listToFilter.filter((p) => p.id !== projectId);
+      });
     } catch (err) {
-      alert("Database error: " + err.message);
+      alert("Failed to delete quest: " + err.message);
     }
   };
 

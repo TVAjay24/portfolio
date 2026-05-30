@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import RevealSection from "./RevealSection";
-import { apiFetch } from "../api";
+import { supabase } from "../supabase";
 import { Terminal, ArrowUpRight, Edit, Check, X, Plus, Trash2, Send, ShieldAlert, Sparkles } from "lucide-react";
 
 export const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
@@ -98,10 +98,14 @@ const Contact = ({ isAdmin }) => {
     setSentSuccess(false);
 
     try {
-      await apiFetch("/api/messages", {
+      const response = await fetch(`${API_BASE}/api/messages`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(msgForm),
       });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Uplink terminal transmission failed");
 
       setSentSuccess(true);
       setMsgForm({ name: "", email: "", message: "" });
@@ -139,8 +143,8 @@ const Contact = ({ isAdmin }) => {
       title: "GITHUB UPLINK",
       jp_name: "ソースコード",
       icon_type: "github",
-      line: "> HANDLE // TVAjay24",
-      link: "https://github.com/TVAjay24",
+      line: "> HANDLE // TVAjay",
+      link: "https://github.com/TVAjay",
       badge: "CONNECTED",
     },
     {
@@ -172,10 +176,15 @@ const Contact = ({ isAdmin }) => {
     },
   ];
 
-  // Fetch dynamic contacts from Express backend
+  // Fetch dynamic contacts from Supabase
   const fetchContactMethods = async () => {
     try {
-      const data = await apiFetch("/api/contact");
+      const { data, error } = await supabase
+        .from("contact_methods")
+        .select("*")
+        .order("sort_order", { ascending: true });
+
+      if (error) throw error;
       if (data && data.length > 0) {
         setContactCards(data);
       }
@@ -216,10 +225,12 @@ const Contact = ({ isAdmin }) => {
       };
 
       if (typeof cardId === "string" && cardId.length > 20) {
-        await apiFetch(`/api/contact/${cardId}`, {
-          method: "PUT",
-          body: JSON.stringify(updated),
-        });
+        const { error } = await supabase
+          .from("contact_methods")
+          .update(updated)
+          .eq("id", cardId);
+
+        if (error) throw error;
       }
 
       setContactCards((prev) => {
@@ -262,13 +273,15 @@ const Contact = ({ isAdmin }) => {
         sort_order: activeContacts.length + 1,
       };
 
-      const data = await apiFetch("/api/contact", {
-        method: "POST",
-        body: JSON.stringify(insertPayload),
-      });
+      const { data, error } = await supabase
+        .from("contact_methods")
+        .insert([insertPayload])
+        .select();
+
+      if (error) throw error;
 
       if (data) {
-        setContactCards((prev) => [...prev, data]);
+        setContactCards((prev) => [...prev, data[0]]);
         setNewContact({ title: "", jp_name: "", icon_type: "github", line: "", link: "", badge: "ACTIVE" });
         setAddFormOpen(false);
       }
@@ -284,9 +297,12 @@ const Contact = ({ isAdmin }) => {
 
     try {
       if (typeof cardId === "string" && cardId.length > 20) {
-        await apiFetch(`/api/contact/${cardId}`, {
-          method: "DELETE",
-        });
+        const { error } = await supabase
+          .from("contact_methods")
+          .delete()
+          .eq("id", cardId);
+
+        if (error) throw error;
       }
 
       setContactCards((prev) => {
@@ -398,7 +414,7 @@ const Contact = ({ isAdmin }) => {
                       required
                       value={newContact.line}
                       onChange={(e) => setNewContact({ ...newContact, line: e.target.value })}
-                      placeholder="e.g. &gt; HANDLE // TVAjay24"
+                      placeholder="e.g. &gt; HANDLE // TVAjay"
                       style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(0,210,255,0.2)", color: "#fff", padding: "8px", fontSize: "0.8rem", outline: "none" }}
                     />
                   </div>

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import ParticleBg from "./ParticleBg";
 import { supabase } from "../supabase";
-import { apiFetch } from "../api";
 import { ArrowRight, MessageSquare, ShieldAlert, Edit, Check, X } from "lucide-react";
 
 const Hero = ({ isAdmin }) => {
@@ -27,11 +26,17 @@ const Hero = ({ isAdmin }) => {
   // Parallax mouse offsets
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  // Fetch Hero settings from Express API profile endpoint
+  // Fetch Hero settings from Supabase profile_stats
   useEffect(() => {
     const fetchHeroSettings = async () => {
       try {
-        const data = await apiFetch("/api/profile");
+        const { data, error } = await supabase
+          .from("profile_stats")
+          .select("hero_greeting, typewriter_words")
+          .limit(1)
+          .single();
+
+        if (error) throw error;
         if (data) {
           if (data.hero_greeting) setHeroGreeting(data.hero_greeting);
           if (data.typewriter_words && data.typewriter_words.length > 0) {
@@ -106,13 +111,15 @@ const Hero = ({ isAdmin }) => {
       const updatedGreeting = editGreeting.trim() || "[ STABLE_LINK // ONLINE ]";
       const updatedWords = editWords.split(",").map((w) => w.trim()).filter(Boolean);
 
-      await apiFetch("/api/profile", {
-        method: "PUT",
-        body: JSON.stringify({
+      const { error } = await supabase
+        .from("profile_stats")
+        .update({
           hero_greeting: updatedGreeting,
           typewriter_words: updatedWords,
         })
-      });
+        .eq("character_name", "AJAY");
+
+      if (error) throw error;
 
       setHeroGreeting(updatedGreeting);
       if (updatedWords.length > 0) {

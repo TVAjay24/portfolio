@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import RevealSection from "./RevealSection";
-import { apiFetch } from "../api";
+import { supabase } from "../supabase";
 import { Award, Star, Calendar, Terminal, Edit, Check, X, Plus, Trash2 } from "lucide-react";
 
 const Achievements = ({ isAdmin }) => {
@@ -51,10 +51,15 @@ const Achievements = ({ isAdmin }) => {
     },
   ];
 
-  // Fetch achievements from Express backend
+  // Fetch achievements from Supabase
   const fetchAchievements = async () => {
     try {
-      const data = await apiFetch("/api/achievements");
+      const { data, error } = await supabase
+        .from("achievements")
+        .select("*")
+        .order("sort_order", { ascending: true });
+
+      if (error) throw error;
       if (data && data.length > 0) {
         setAchievementsList(data);
       }
@@ -98,10 +103,12 @@ const Achievements = ({ isAdmin }) => {
 
       // Only attempt write if ID is standard uuid (i.e. not static fallback string)
       if (typeof trophyId === "string" && trophyId.length > 20) {
-        await apiFetch(`/api/achievements/${trophyId}`, {
-          method: "PUT",
-          body: JSON.stringify(updatedTrophy),
-        });
+        const { error } = await supabase
+          .from("achievements")
+          .update(updatedTrophy)
+          .eq("id", trophyId);
+
+        if (error) throw error;
       }
 
       // Sync local state
@@ -132,13 +139,15 @@ const Achievements = ({ isAdmin }) => {
         sort_order: activeTrophies.length + 1,
       };
 
-      const data = await apiFetch("/api/achievements", {
-        method: "POST",
-        body: JSON.stringify(insertPayload),
-      });
+      const { data, error } = await supabase
+        .from("achievements")
+        .insert([insertPayload])
+        .select();
+
+      if (error) throw error;
 
       if (data) {
-        setAchievementsList((prev) => [...prev, data]);
+        setAchievementsList((prev) => [...prev, data[0]]);
         setNewTrophy({ title: "", jp_name: "", award: "", date: "", xp_reward: "", description: "" });
         setAddFormOpen(false);
       }
@@ -152,9 +161,12 @@ const Achievements = ({ isAdmin }) => {
 
     try {
       if (typeof trophyId === "string" && trophyId.length > 20) {
-        await apiFetch(`/api/achievements/${trophyId}`, {
-          method: "DELETE",
-        });
+        const { error } = await supabase
+          .from("achievements")
+          .delete()
+          .eq("id", trophyId);
+
+        if (error) throw error;
       }
 
       setAchievementsList((prev) => {
