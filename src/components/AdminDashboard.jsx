@@ -287,7 +287,7 @@ const AdminDashboard = () => {
               <ArrowLeft size={12} /> BACK_TO_SITE
             </button>
             <button onClick={handleLogout} className="hud-btn hud-btn-purple" style={{ padding: "8px 16px", fontSize: "0.7rem", display: "flex", alignItems: "center", gap: "6px" }}>
-              <LogOut size={12} /> LOG_OUT
+              <LogOut size={12} /> EXIT_SYS
             </button>
           </div>
         </div>
