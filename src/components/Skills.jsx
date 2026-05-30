@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import RevealSection from "./RevealSection";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "../supabase";
 import { Code, Terminal, Server, Database, Settings, Trash2, Plus, Check, X } from "lucide-react";
 
 const Skills = ({ isAdmin }) => {
@@ -23,114 +22,74 @@ const Skills = ({ isAdmin }) => {
     { id: "tools", name: "SYSTEM TOOLS", icon: Settings, jpName: "ツール" },
   ];
 
-  // Static fallback data to guarantee visual safety during setup
-  const staticFallback = {
-    languages: [
-      { name: "JavaScript", level: 90, description: "Primary logic syntax for web scripts and interactive systems." },
-      { name: "Python", level: 85, description: "Used for general computations, automation scripts, and backend prototypes." },
-      { name: "C Language", level: 80, description: "Foundational syntax for memory structures and pointer algorithms." },
-    ],
-    frontend: [
-      { name: "React", level: 88, description: "Standard client blueprint compiler for interactive SPA nodes." },
-      { name: "Vite", level: 85, description: "Modern frontend build engine with rapid virtual hot-reloading." },
-      { name: "HTML5", level: 95, description: "Structure markup parser for digital layouts and DOM frameworks." },
-      { name: "CSS3", level: 90, description: "Styling sheet compiler using responsive grids, shapes, and custom glows." },
-    ],
-    backend: [
-      { name: "Node.js", level: 80, description: "Runtime compiler for executing JavaScript logic on the server mainframe." },
-      { name: "Express.js", level: 82, description: "Routing server blueprint library for standard REST API endpoints." },
-    ],
-    database: [
-      { name: "Supabase", level: 85, description: "Digital database cluster mapping custom authentication and tables." },
-      { name: "PostgreSQL", level: 80, description: "Relational database server using rigid schemas and secure logic queries." },
-      { name: "MongoDB", level: 78, description: "Document database storage using dynamic JSON schema models." },
-    ],
-    tools: [
-      { name: "Git", level: 85, description: "Main version logger and branch management database tool." },
-      { name: "GitHub", level: 88, description: "Remote terminal server for online repository backups." },
-      { name: "VS Code", level: 92, description: "Primary IDE workspace styled with keybind maps and extensions." },
-    ],
-  };
+  // Static fallback data
+  const staticSkills = [
+    { id: "s1", category: "languages", name: "JavaScript", level: 90, description: "Primary logic syntax for web scripts and interactive systems." },
+    { id: "s2", category: "languages", name: "Python", level: 85, description: "Used for general computations, automation scripts, and backend prototypes." },
+    { id: "s3", category: "languages", name: "C", level: 80, description: "Foundational syntax for memory structures and pointer algorithms." },
+    { id: "s4", category: "frontend", name: "React", level: 88, description: "Standard client blueprint compiler for interactive SPA nodes." },
+    { id: "s5", category: "backend", name: "Node.js", level: 80, description: "Runtime compiler for executing JavaScript logic on the server mainframe." },
+    { id: "s6", category: "backend", name: "Express", level: 82, description: "Routing server blueprint library for standard REST API endpoints." },
+    { id: "s7", category: "database", name: "Supabase", level: 85, description: "Digital database cluster mapping custom authentication and tables." },
+    { id: "s8", category: "database", name: "MongoDB", level: 78, description: "Document database storage using dynamic JSON schema models." },
+    { id: "s9", category: "tools", name: "Git", level: 85, description: "Main version logger and branch management database tool." }
+  ];
 
-  // Fetch real-time skills from Supabase
-  const fetchSkills = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("skills")
-        .select("*")
-        .order("sort_order", { ascending: true });
-
-      if (error) throw error;
-      if (data && data.length > 0) {
-        setSkills(data);
-      }
-    } catch (err) {
-      console.warn("Database skills missing or offline, loading static backup:", err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Fetch real-time skills from localStorage
   useEffect(() => {
-    fetchSkills();
+    let localSkills = localStorage.getItem("portfolio_skills");
+    if (!localSkills) {
+      localStorage.setItem("portfolio_skills", JSON.stringify(staticSkills));
+      localSkills = JSON.stringify(staticSkills);
+    }
+    try {
+      setSkills(JSON.parse(localSkills));
+    } catch (err) {
+      setSkills(staticSkills);
+    }
+    setLoading(false);
   }, []);
 
-  // Map database entries to UI categories, falling back to static schema if blank
+  // Map entries to UI categories
   const getCategorizedSkills = (catId) => {
-    const dbFiltered = skills.filter((s) => s.category === catId);
-    return dbFiltered.length > 0 ? dbFiltered : staticFallback[catId];
+    return skills.filter((s) => s.category === catId);
   };
 
   // Add new skill node in active category
-  const handleAddSkill = async (e) => {
+  const handleAddSkill = (e) => {
     e.preventDefault();
     if (!newSkillName.trim()) return;
 
-    try {
-      const categorySkills = skills.filter((s) => s.category === activeCat);
-      const newSkill = {
-        category: activeCat,
-        name: newSkillName,
-        level: parseInt(newSkillLevel),
-        description: newSkillDesc || "Standard logical system module.",
-        sort_order: categorySkills.length + 1,
-      };
+    const newSkill = {
+      id: Math.random().toString(36).substr(2, 9),
+      category: activeCat,
+      name: newSkillName.trim(),
+      level: parseInt(newSkillLevel),
+      description: newSkillDesc || "Standard logical system module.",
+      sort_order: skills.filter((s) => s.category === activeCat).length + 1,
+    };
 
-      const { data, error } = await supabase
-        .from("skills")
-        .insert([newSkill])
-        .select();
+    setSkills((prev) => {
+      const next = [...prev, newSkill];
+      localStorage.setItem("portfolio_skills", JSON.stringify(next));
+      return next;
+    });
 
-      if (error) throw error;
-
-      if (data) {
-        setSkills((prev) => [...prev, data[0]]);
-        setNewSkillName("");
-        setNewSkillDesc("");
-        setNewSkillLevel(80);
-        setFormOpen(false);
-      }
-    } catch (err) {
-      alert("Failed to insert skill: " + err.message);
-    }
+    setNewSkillName("");
+    setNewSkillDesc("");
+    setNewSkillLevel(80);
+    setFormOpen(false);
   };
 
   // Remove skill node
-  const handleDeleteSkill = async (skillId, skillName) => {
+  const handleDeleteSkill = (skillId, skillName) => {
     if (!window.confirm(`DISSOLVE ABILITY NODE: "${skillName}"?`)) return;
 
-    try {
-      const { error } = await supabase
-        .from("skills")
-        .delete()
-        .eq("id", skillId);
-
-      if (error) throw error;
-
-      setSkills((prev) => prev.filter((s) => s.id !== skillId));
-    } catch (err) {
-      alert("Failed to delete skill: " + err.message);
-    }
+    setSkills((prev) => {
+      const next = prev.filter((s) => s.id !== skillId);
+      localStorage.setItem("portfolio_skills", JSON.stringify(next));
+      return next;
+    });
   };
 
   const activeSkillsList = getCategorizedSkills(activeCat);

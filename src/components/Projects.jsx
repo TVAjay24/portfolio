@@ -1,11 +1,6 @@
 import { useState, useEffect } from "react";
 import RevealSection from "./RevealSection";
-import { supabase } from "../supabase";
 import { ExternalLink, Trophy, Compass, Edit, Check, X, Star, Plus, Trash2 } from "lucide-react";
-
-export const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-  ? "http://localhost:3000"
-  : (import.meta.env.VITE_API_BASE || "");
 
 const GithubIcon = ({ size = 16, className }) => (
   <svg
@@ -55,6 +50,7 @@ const Projects = ({ isAdmin }) => {
     github: "",
     live: "",
   });
+
   const staticFallback = [
     {
       id: "campuslink",
@@ -82,42 +78,60 @@ const Projects = ({ isAdmin }) => {
     },
   ];
 
-  // Fetch real-time projects/quests from dynamic Express API mainframe
-  const fetchProjects = async () => {
+  // Fetch real-time projects/quests from local storage
+  const fetchProjects = () => {
+    let localProjs = localStorage.getItem("portfolio_projects");
+    if (!localProjs) {
+      // Map initial ones to CMS format
+      const cmsFormat = staticFallback.map(p => ({
+        id: p.id,
+        title: p.name,
+        description: p.description,
+        tech_stack: p.loot,
+        github_url: p.github,
+        live_url: p.live,
+        date: "2025"
+      }));
+      localStorage.setItem("portfolio_projects", JSON.stringify(cmsFormat));
+      localProjs = JSON.stringify(cmsFormat);
+    }
+
     try {
-      const response = await fetch(`${API_BASE}/api/projects`);
-      if (!response.ok) throw new Error("API responded with an error");
-      const data = await response.json();
+      const data = JSON.parse(localProjs);
       if (data && data.length > 0) {
-        // Map columns dynamically to be compatible with both schema.sql and schema_cms.sql structures
         const mappedData = data.map((p) => ({
           id: p.id,
-          name: p.name || p.title || "",
+          name: p.title || p.name || "",
           jp_name: p.jp_name || p.title || "プロジェクト",
           type: p.type || "MAIN QUEST",
           difficulty: p.difficulty || "MEDIUM",
           status: p.status || "IN PROGRESS",
           description: p.description || "",
-          loot: p.loot || p.tech_stack || [],
-          github: p.github || p.github_url || "#",
-          live: p.live || p.live_url || "#",
+          loot: p.tech_stack || p.loot || [],
+          github: p.github_url || p.github || "#",
+          live: p.live_url || p.live || "#",
           sort_order: p.sort_order || 0,
         }));
         setProjectsList(mappedData);
+      } else {
+        setProjectsList([]);
       }
     } catch (err) {
-      console.warn("Database projects missing or offline, loading static backup:", err.message);
-    } finally {
-      setLoading(false);
+      setProjectsList(staticFallback);
     }
+    setLoading(false);
   };
 
   useEffect(() => {
     fetchProjects();
+
+    // Event listener to sync updates from the admin cockpit tab in real time
+    window.addEventListener("storage", fetchProjects);
+    return () => window.removeEventListener("storage", fetchProjects);
   }, []);
 
   const getProjects = () => {
-    return projectsList.length > 0 ? projectsList : staticFallback;
+    return projectsList;
   };
 
   const handleEditClick = (p) => {
@@ -135,106 +149,100 @@ const Projects = ({ isAdmin }) => {
     });
   };
 
-  const handleSaveQuest = async (projectId) => {
-    try {
-      const updatedProject = {
-        name: editForm.name,
-        jp_name: editForm.jp_name,
-        type: editForm.type,
-        difficulty: editForm.difficulty,
-        status: editForm.status,
-        description: editForm.description,
-        loot: editForm.loot.split(",").map((t) => t.trim()).filter(Boolean),
-        github: editForm.github,
-        live: editForm.live,
-      };
+  const handleSaveQuest = (projectId) => {
+    const updatedProject = {
+      id: projectId,
+      name: editForm.name,
+      jp_name: editForm.jp_name,
+      type: editForm.type,
+      difficulty: editForm.difficulty,
+      status: editForm.status,
+      description: editForm.description,
+      loot: editForm.loot.split(",").map((t) => t.trim()).filter(Boolean),
+      github: editForm.github,
+      live: editForm.live,
+    };
 
-      // Only attempt write if ID is standard uuid (i.e. not static fallback string)
-      if (typeof projectId === "string" && projectId.length > 20) {
-        const { error } = await supabase
-          .from("projects")
-          .update(updatedProject)
-          .eq("id", projectId);
+    const nextList = projectsList.map((p) => (p.id === projectId ? { ...p, ...updatedProject } : p));
+    setProjectsList(nextList);
 
-        if (error) throw error;
-      }
+    // Save back to localStorage in CMS format
+    const cmsFormat = nextList.map(p => ({
+      id: p.id,
+      title: p.name,
+      description: p.description,
+      tech_stack: p.loot,
+      github_url: p.github,
+      live_url: p.live,
+      date: "2025"
+    }));
+    localStorage.setItem("portfolio_projects", JSON.stringify(cmsFormat));
 
-      // Sync local state
-      setProjectsList((prev) => {
-        const listToMap = prev.length > 0 ? prev : staticFallback;
-        return listToMap.map((p) => (p.id === projectId ? { ...p, ...updatedProject } : p));
-      });      setEditingProjectId(null);
-    } catch (err) {
-      alert("Database error: " + err.message);
-    }
+    setEditingProjectId(null);
   };
 
-  const handleCreateQuest = async (e) => {
+  const handleCreateQuest = (e) => {
     e.preventDefault();
     if (!newQuest.name.trim()) return;
 
-    try {
-      const activeQuests = getProjects();
-      const insertPayload = {
-        name: newQuest.name.trim(),
-        jp_name: newQuest.jp_name.trim() || "クエスト",
-        type: newQuest.type,
-        difficulty: newQuest.difficulty,
-        status: newQuest.status,
-        description: newQuest.description.trim() || "Synthesizing quest parameters...",
-        loot: newQuest.loot.split(",").map((l) => l.trim()).filter(Boolean),
-        github: newQuest.github.trim() || "#",
-        live: newQuest.live.trim() || "#",
-        sort_order: activeQuests.length + 1,
-      };
+    const insertPayload = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: newQuest.name.trim(),
+      jp_name: newQuest.jp_name.trim() || "クエスト",
+      type: newQuest.type,
+      difficulty: newQuest.difficulty,
+      status: newQuest.status,
+      description: newQuest.description.trim() || "Synthesizing quest parameters...",
+      loot: newQuest.loot.split(",").map((l) => l.trim()).filter(Boolean),
+      github: newQuest.github.trim() || "#",
+      live: newQuest.live.trim() || "#",
+      sort_order: projectsList.length + 1,
+    };
 
-      const { data, error } = await supabase
-        .from("projects")
-        .insert([insertPayload])
-        .select();
+    const nextList = [...projectsList, insertPayload];
+    setProjectsList(nextList);
 
-      if (error) throw error;
+    const cmsFormat = nextList.map(p => ({
+      id: p.id,
+      title: p.name,
+      description: p.description,
+      tech_stack: p.loot,
+      github_url: p.github,
+      live_url: p.live,
+      date: "2025"
+    }));
+    localStorage.setItem("portfolio_projects", JSON.stringify(cmsFormat));
 
-      if (data) {
-        setProjectsList((prev) => [...prev, data[0]]);
-        setNewQuest({
-          name: "",
-          jp_name: "",
-          type: "MAIN QUEST",
-          status: "IN PROGRESS",
-          difficulty: "MEDIUM",
-          description: "",
-          loot: "",
-          github: "",
-          live: "",
-        });
-        setAddFormOpen(false);
-      }
-    } catch (err) {
-      alert("Failed to inject new quest: " + err.message);
-    }
+    setNewQuest({
+      name: "",
+      jp_name: "",
+      type: "MAIN QUEST",
+      status: "IN PROGRESS",
+      difficulty: "MEDIUM",
+      description: "",
+      loot: "",
+      github: "",
+      live: "",
+    });
+    setAddFormOpen(false);
   };
 
-  const handleDeleteQuest = async (projectId, name) => {
+  const handleDeleteQuest = (projectId, name) => {
     if (!window.confirm(`DISSOLVE QUEST LOG: "${name}"?`)) return;
 
-    try {
-      if (typeof projectId === "string" && projectId.length > 20) {
-        const { error } = await supabase
-          .from("projects")
-          .delete()
-          .eq("id", projectId);
+    const nextList = projectsList.filter((p) => p.id !== projectId);
+    setProjectsList(nextList);
 
-        if (error) throw error;
-      }
-
-      setProjectsList((prev) => {
-        const listToFilter = prev.length > 0 ? prev : staticFallback;
-        return listToFilter.filter((p) => p.id !== projectId);
-      });
-    } catch (err) {
-      alert("Failed to delete quest: " + err.message);
-    }
+    const cmsFormat = nextList.map(p => ({
+      id: p.id,
+      title: p.name,
+      description: p.description,
+      tech_stack: p.loot,
+      github_url: p.github,
+      live_url: p.live,
+      date: "2025"
+    }));
+    localStorage.setItem("portfolio_projects", JSON.stringify(cmsFormat));
   };
 
   const currentQuests = getProjects();

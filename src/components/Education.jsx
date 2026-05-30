@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import RevealSection from "./RevealSection";
-import { supabase } from "../supabase";
 import { GraduationCap, Landmark, CheckSquare, Bookmark, Compass, Edit, Check, X, Plus, Trash2 } from "lucide-react";
 
 const Education = ({ isAdmin }) => {
@@ -38,74 +37,56 @@ const Education = ({ isAdmin }) => {
   ];
 
   // Fetch dynamic education details
-  const fetchEduDetails = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("profile_stats")
-        .select("education_school, education_degree, education_period, education_progress, education_progress_label")
-        .limit(1)
-        .single();
-
-      if (error) throw error;
-      if (data && data.education_school) {
-        setEduStats(data);
-      }
-    } catch (err) {
-      console.warn("Failed to load dynamic education stats, loading defaults.");
-    }
-  };
-
-  // Fetch dynamic objectives checklist
-  const fetchObjectives = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("education_objectives")
-        .select("*")
-        .order("sort_order", { ascending: true });
-
-      if (error) throw error;
-      if (data && data.length > 0) {
-        setObjectives(data);
-      }
-    } catch (err) {
-      console.warn("Failed to load dynamic academic objectives, loading defaults.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchEduDetails();
-    fetchObjectives();
+    let localEduStats = localStorage.getItem("portfolio_education_stats");
+    if (!localEduStats) {
+      const defaultEdu = {
+        education_school: "VIDYAVARDHAKA COLLEGE OF ENGINEERING (VVCE), MYSURU",
+        education_degree: "Bachelor of Engineering (B.E.) — Computer Science & Engineering",
+        education_period: "QUEST PERIOD: 2024 — 2028",
+        education_progress: 25,
+        education_progress_label: "25% UNLOCKED (1ST YEAR COMPLETED)",
+      };
+      localStorage.setItem("portfolio_education_stats", JSON.stringify(defaultEdu));
+      localEduStats = JSON.stringify(defaultEdu);
+    }
+    try {
+      setEduStats(JSON.parse(localEduStats));
+    } catch (err) {
+      console.warn("Error reading local education stats cache.");
+    }
+
+    // Fetch dynamic objectives checklist
+    let localObjectives = localStorage.getItem("portfolio_education_objectives");
+    if (!localObjectives) {
+      localStorage.setItem("portfolio_education_objectives", JSON.stringify(staticFallbackObjectives));
+      localObjectives = JSON.stringify(staticFallbackObjectives);
+    }
+    try {
+      setObjectives(JSON.parse(localObjectives));
+    } catch (err) {
+      setObjectives(staticFallbackObjectives);
+    }
+    setLoading(false);
   }, []);
 
   const getObjectives = () => {
-    return objectives.length > 0 ? objectives : staticFallbackObjectives;
+    return objectives;
   };
 
   // Save school degree stats card
-  const handleSaveCard = async () => {
-    try {
-      const updated = {
-        education_school: cardForm.education_school.trim() || eduStats.education_school,
-        education_degree: cardForm.education_degree.trim() || eduStats.education_degree,
-        education_period: cardForm.education_period.trim() || eduStats.education_period,
-        education_progress: parseInt(cardForm.education_progress),
-        education_progress_label: cardForm.education_progress_label.trim() || eduStats.education_progress_label,
-      };
+  const handleSaveCard = () => {
+    const updated = {
+      education_school: cardForm.education_school.trim() || eduStats.education_school,
+      education_degree: cardForm.education_degree.trim() || eduStats.education_degree,
+      education_period: cardForm.education_period.trim() || eduStats.education_period,
+      education_progress: parseInt(cardForm.education_progress),
+      education_progress_label: cardForm.education_progress_label.trim() || eduStats.education_progress_label,
+    };
 
-      const { error } = await supabase
-        .from("profile_stats")
-        .update(updated)
-        .eq("character_name", "AJAY");
-
-      if (error) throw error;
-
-      setEduStats(updated);
-      setIsEditingCard(false);
-    } catch (err) {
-      alert("Database error: " + err.message);
-    }
+    localStorage.setItem("portfolio_education_stats", JSON.stringify(updated));
+    setEduStats(updated);
+    setIsEditingCard(false);
   };
 
   const startEditCard = () => {
@@ -125,76 +106,45 @@ const Education = ({ isAdmin }) => {
     setObjTextVal(obj.text);
   };
 
-  const handleSaveObj = async (objId) => {
-    try {
-      if (typeof objId === "string" && objId.length > 20) {
-        const { error } = await supabase
-          .from("education_objectives")
-          .update({ text: objTextVal })
-          .eq("id", objId);
-
-        if (error) throw error;
-      }
-
-      setObjectives((prev) => {
-        const listToMap = prev.length > 0 ? prev : staticFallbackObjectives;
-        return listToMap.map((o) => (o.id === objId ? { ...o, text: objTextVal } : o));
-      });
-
-      setEditingObjId(null);
-    } catch (err) {
-      alert("Database error: " + err.message);
-    }
+  const handleSaveObj = (objId) => {
+    setObjectives((prev) => {
+      const next = prev.map((o) => (o.id === objId ? { ...o, text: objTextVal } : o));
+      localStorage.setItem("portfolio_education_objectives", JSON.stringify(next));
+      return next;
+    });
+    setEditingObjId(null);
   };
 
-  const handleAddObjective = async (e) => {
+  const handleAddObjective = (e) => {
     e.preventDefault();
     if (!newObjText.trim()) return;
 
-    try {
-      const activeObjs = objectives.length > 0 ? objectives : staticFallbackObjectives;
-      const nextNum = String(activeObjs.length + 1).padStart(2, "0");
-      
-      const newObj = {
-        objective_number: nextNum,
-        text: newObjText,
-        sort_order: activeObjs.length + 1,
-      };
+    const nextNum = String(objectives.length + 1).padStart(2, "0");
+    const newObj = {
+      id: Math.random().toString(36).substr(2, 9),
+      objective_number: nextNum,
+      text: newObjText.trim(),
+      sort_order: objectives.length + 1,
+    };
 
-      const { data, error } = await supabase
-        .from("education_objectives")
-        .insert([newObj])
-        .select();
+    setObjectives((prev) => {
+      const next = [...prev, newObj];
+      localStorage.setItem("portfolio_education_objectives", JSON.stringify(next));
+      return next;
+    });
 
-      if (error) throw error;
-
-      if (data) {
-        setObjectives((prev) => [...prev, data[0]]);
-        setNewObjText("");
-        setAddObjOpen(false);
-      }
-    } catch (err) {
-      alert("Failed to insert objective: " + err.message);
-    }
+    setNewObjText("");
+    setAddObjOpen(false);
   };
 
-  const handleDeleteObjective = async (objId, textStr) => {
+  const handleDeleteObjective = (objId, textStr) => {
     if (!window.confirm(`DELETE ACADEMIC OBJECTIVE NODE: "${textStr.slice(0, 30)}..."?`)) return;
 
-    try {
-      if (typeof objId === "string" && objId.length > 20) {
-        const { error } = await supabase
-          .from("education_objectives")
-          .delete()
-          .eq("id", objId);
-
-        if (error) throw error;
-      }
-
-      setObjectives((prev) => prev.filter((o) => o.id !== objId));
-    } catch (err) {
-      alert("Database error: " + err.message);
-    }
+    setObjectives((prev) => {
+      const next = prev.filter((o) => o.id !== objId);
+      localStorage.setItem("portfolio_education_objectives", JSON.stringify(next));
+      return next;
+    });
   };
 
   const currentObjectives = getObjectives();

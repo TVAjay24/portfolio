@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import ParticleBg from "./ParticleBg";
-import { supabase } from "../supabase";
 import { ArrowRight, MessageSquare, ShieldAlert, Edit, Check, X } from "lucide-react";
 
 const Hero = ({ isAdmin }) => {
@@ -9,13 +8,12 @@ const Hero = ({ isAdmin }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [typingSpeed, setTypingSpeed] = useState(100);
 
-  // Dynamic CMS fields loaded from database
+  // Dynamic CMS fields loaded from local storage
   const [heroGreeting, setHeroGreeting] = useState("[ STABLE_LINK // ONLINE ]");
   const [words, setWords] = useState([
-    "Full Stack Developer",
-    "CSE Student @ VVCE",
-    "Anime Enthusiast",
-    "Game Dev Explorer",
+    "FULL-STACK DEVELOPER",
+    "CSE STUDENT @ VVCE",
+    "GAME HUD DESIGNER",
   ]);
 
   // Editing console state
@@ -26,28 +24,26 @@ const Hero = ({ isAdmin }) => {
   // Parallax mouse offsets
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  // Fetch Hero settings from Supabase profile_stats
+  // Fetch Hero settings from local storage
   useEffect(() => {
-    const fetchHeroSettings = async () => {
+    const localHero = localStorage.getItem("portfolio_hero");
+    if (localHero) {
       try {
-        const { data, error } = await supabase
-          .from("profile_stats")
-          .select("hero_greeting, typewriter_words")
-          .limit(1)
-          .single();
-
-        if (error) throw error;
-        if (data) {
-          if (data.hero_greeting) setHeroGreeting(data.hero_greeting);
-          if (data.typewriter_words && data.typewriter_words.length > 0) {
-            setWords(data.typewriter_words);
-          }
+        const parsed = JSON.parse(localHero);
+        if (parsed.hero_greeting) setHeroGreeting(parsed.hero_greeting);
+        if (parsed.typewriter_words && parsed.typewriter_words.length > 0) {
+          setWords(parsed.typewriter_words);
         }
       } catch (err) {
-        console.warn("Failed to load dynamic hero text, loading defaults.");
+        console.warn("Invalid local hero cache, loading defaults.");
       }
-    };
-    fetchHeroSettings();
+    } else {
+      const defaults = {
+        hero_greeting: "[ STABLE_LINK // ONLINE ]",
+        typewriter_words: ["FULL-STACK DEVELOPER", "CSE STUDENT @ VVCE", "GAME HUD DESIGNER"]
+      };
+      localStorage.setItem("portfolio_hero", JSON.stringify(defaults));
+    }
   }, []);
 
   // Typewriter core loop (dependent on words state)
@@ -106,32 +102,24 @@ const Hero = ({ isAdmin }) => {
     setIsEditing(true);
   };
 
-  const handleSaveHero = async () => {
-    try {
-      const updatedGreeting = editGreeting.trim() || "[ STABLE_LINK // ONLINE ]";
-      const updatedWords = editWords.split(",").map((w) => w.trim()).filter(Boolean);
+  const handleSaveHero = () => {
+    const updatedGreeting = editGreeting.trim() || "[ STABLE_LINK // ONLINE ]";
+    const updatedWords = editWords.split(",").map((w) => w.trim()).filter(Boolean);
 
-      const { error } = await supabase
-        .from("profile_stats")
-        .update({
-          hero_greeting: updatedGreeting,
-          typewriter_words: updatedWords,
-        })
-        .eq("character_name", "AJAY");
+    const payload = {
+      hero_greeting: updatedGreeting,
+      typewriter_words: updatedWords
+    };
+    localStorage.setItem("portfolio_hero", JSON.stringify(payload));
 
-      if (error) throw error;
-
-      setHeroGreeting(updatedGreeting);
-      if (updatedWords.length > 0) {
-        setWords(updatedWords);
-        setWordIndex(0);
-        setText("");
-        setIsDeleting(false);
-      }
-      setIsEditing(false);
-    } catch (err) {
-      alert("Database error: " + err.message);
+    setHeroGreeting(updatedGreeting);
+    if (updatedWords.length > 0) {
+      setWords(updatedWords);
+      setWordIndex(0);
+      setText("");
+      setIsDeleting(false);
     }
+    setIsEditing(false);
   };
 
   return (

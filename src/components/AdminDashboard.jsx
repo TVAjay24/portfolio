@@ -1,10 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "../supabase";
-import { Terminal, Lock, Mail, Compass, Award, ShieldAlert, Check, Plus, Trash2, Edit, LogOut, ArrowLeft, ToggleLeft, ToggleRight } from "lucide-react";
-
-export const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-  ? "http://localhost:3000"
-  : (import.meta.env.VITE_API_BASE || "");
+import { Terminal, Lock, Mail, Compass, Award, ShieldAlert, Check, Plus, Trash2, Edit, LogOut, ArrowLeft } from "lucide-react";
 
 const AdminDashboard = () => {
   const [session, setSession] = useState(null);
@@ -12,7 +7,7 @@ const AdminDashboard = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [activeTab, setActiveTab] = useState("projects"); // "projects" or "blog"
+  const [activeTab, setActiveTab] = useState("projects"); // "projects" or "messages"
 
   // Data states
   const [projects, setProjects] = useState([]);
@@ -22,39 +17,80 @@ const AdminDashboard = () => {
   const [projectForm, setProjectForm] = useState({ id: null, title: "", description: "", tech_stack: "", live_url: "", github_url: "", thumbnail_url: "", date: "" });
   const [projectFormOpen, setProjectFormOpen] = useState(false);
 
-  // Check auth state
+  // Check auth state from sessionStorage
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
+    const localSession = sessionStorage.getItem("admin_session");
+    if (localSession) {
+      setSession(JSON.parse(localSession));
+    }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
-    });
+    const checkSession = () => {
+      const sess = sessionStorage.getItem("admin_session");
+      setSession(sess ? JSON.parse(sess) : null);
+    };
 
-    return () => subscription.unsubscribe();
+    window.addEventListener("storage", checkSession);
+    window.addEventListener("admin_auth_change", checkSession);
+
+    return () => {
+      window.removeEventListener("storage", checkSession);
+      window.removeEventListener("admin_auth_change", checkSession);
+    };
   }, []);
 
-  // Fetch Projects & Messages
-  const fetchCMSData = async () => {
+  // Fetch Projects & Messages from localStorage
+  const fetchCMSData = () => {
+    // 1. Projects
+    let localProjs = localStorage.getItem("portfolio_projects");
+    if (!localProjs) {
+      const initialProjects = [
+        {
+          id: "campuslink",
+          title: "CampusLink",
+          description: "A comprehensive full-stack campus community web application custom engineered for Vidyavardhaka College of Engineering (VVCE) students. Features include an active peer Marketplace, Event coordinates, open discussion Forum boards, group messaging nodes, and personal Connection Wishlists.",
+          tech_stack: ["React + Vite", "Node.js", "Express.js", "Supabase", "PostgreSQL"],
+          github_url: "https://github.com/ajayotaku2-dev/CampusLink",
+          live_url: "#",
+          date: "2025"
+        },
+        {
+          id: "campusfinance",
+          title: "CampusFinance",
+          description: "A student-centric financial micro-budgeting dashboard built under tight hackathon timelines. Empowers students to log daily expenditures, track scholarship/grant allocations, and visualize monthly budgeting structures to curb college costs.",
+          tech_stack: ["React", "Node.js", "Express.js", "Supabase"],
+          github_url: "https://github.com/ajayotaku2-dev/CampusFinance",
+          live_url: "#",
+          date: "2024"
+        }
+      ];
+      localStorage.setItem("portfolio_projects", JSON.stringify(initialProjects));
+      localProjs = JSON.stringify(initialProjects);
+    }
     try {
-      // Fetch Projects from Supabase directly for CMS (realtime)
-      const { data: projData, error: projErr } = await supabase
-        .from("projects")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (projErr) throw projErr;
-      setProjects(projData || []);
+      setProjects(JSON.parse(localProjs));
+    } catch (e) {
+      setProjects([]);
+    }
 
-      // Fetch Contact Messages from Supabase directly
-      const { data: msgData, error: msgErr } = await supabase
-        .from("contact_messages")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (msgErr) throw msgErr;
-      setMessages(msgData || []);
-    } catch (err) {
-      console.error("CMS Sync Error:", err.message);
+    // 2. Transmissions
+    let localMsgs = localStorage.getItem("portfolio_messages");
+    if (!localMsgs) {
+      const initialMessages = [
+        {
+          id: "msg1",
+          name: "Asuka Langley",
+          email: "asuka@nerv.org",
+          message: "Hey Ajay! This is a secure visitor transmission system check. /// SIGNAL_OUT",
+          created_at: new Date().toISOString()
+        }
+      ];
+      localStorage.setItem("portfolio_messages", JSON.stringify(initialMessages));
+      localMsgs = JSON.stringify(initialMessages);
+    }
+    try {
+      setMessages(JSON.parse(localMsgs));
+    } catch (e) {
+      setMessages([]);
     }
   };
 
@@ -64,61 +100,57 @@ const AdminDashboard = () => {
     }
   }, [session]);
 
-  const handleLogin = async (e) => {
+  const handleLogin = (e) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg("");
-    try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-    } catch (err) {
-      setErrorMsg(err.message);
-    } finally {
+    
+    setTimeout(() => {
+      if (email.trim().toLowerCase() === "tvajay0@gmail.com") {
+        const fakeSession = { user: { email: "tvajay0@gmail.com" } };
+        sessionStorage.setItem("admin_session", JSON.stringify(fakeSession));
+        window.dispatchEvent(new Event("admin_auth_change"));
+        setSession(fakeSession);
+      } else {
+        setErrorMsg("Unauthorized administrator coordinates.");
+      }
       setLoading(false);
-    }
+    }, 600);
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
+    sessionStorage.removeItem("admin_session");
+    window.dispatchEvent(new Event("admin_auth_change"));
+    setSession(null);
   };
 
   // ==========================================
   // PROJECTS CRUD
   // ==========================================
-  const handleSaveProject = async (e) => {
+  const handleSaveProject = (e) => {
     e.preventDefault();
-    try {
-      const payload = {
-        title: projectForm.title,
-        description: projectForm.description,
-        tech_stack: projectForm.tech_stack.split(",").map(t => t.trim()).filter(Boolean),
-        live_url: projectForm.live_url || "#",
-        github_url: projectForm.github_url || "#",
-        thumbnail_url: projectForm.thumbnail_url || "",
-        date: projectForm.date || ""
-      };
+    const payload = {
+      id: projectForm.id || Math.random().toString(36).substr(2, 9),
+      title: projectForm.title,
+      description: projectForm.description,
+      tech_stack: projectForm.tech_stack.split(",").map(t => t.trim()).filter(Boolean),
+      live_url: projectForm.live_url || "#",
+      github_url: projectForm.github_url || "#",
+      thumbnail_url: projectForm.thumbnail_url || "",
+      date: projectForm.date || ""
+    };
 
-      if (projectForm.id) {
-        // Edit existing
-        const { error } = await supabase
-          .from("projects")
-          .update(payload)
-          .eq("id", projectForm.id);
-        if (error) throw error;
-      } else {
-        // Add new
-        const { error } = await supabase
-          .from("projects")
-          .insert([payload]);
-        if (error) throw error;
-      }
-
-      setProjectFormOpen(false);
-      setProjectForm({ id: null, title: "", description: "", tech_stack: "", live_url: "", github_url: "", thumbnail_url: "", date: "" });
-      fetchCMSData();
-    } catch (err) {
-      alert("Error: " + err.message);
+    let updatedProjectsList;
+    if (projectForm.id) {
+      updatedProjectsList = projects.map(p => p.id === projectForm.id ? payload : p);
+    } else {
+      updatedProjectsList = [...projects, payload];
     }
+
+    localStorage.setItem("portfolio_projects", JSON.stringify(updatedProjectsList));
+    setProjects(updatedProjectsList);
+    setProjectFormOpen(false);
+    setProjectForm({ id: null, title: "", description: "", tech_stack: "", live_url: "", github_url: "", thumbnail_url: "", date: "" });
   };
 
   const handleEditProjectClick = (p) => {
@@ -135,31 +167,21 @@ const AdminDashboard = () => {
     setProjectFormOpen(true);
   };
 
-  const handleDeleteProject = async (id, title) => {
+  const handleDeleteProject = (id, title) => {
     if (!window.confirm(`DISSOLVE PROJECT NODE: "${title}"?`)) return;
-    try {
-      const { error } = await supabase.from("projects").delete().eq("id", id);
-      if (error) throw error;
-      fetchCMSData();
-    } catch (err) {
-      alert("Error: " + err.message);
-    }
+    const updated = projects.filter(p => p.id !== id);
+    localStorage.setItem("portfolio_projects", JSON.stringify(updated));
+    setProjects(updated);
   };
-
-
 
   // ==========================================
   // MESSAGES CRUD
   // ==========================================
-  const handleDeleteMessage = async (id, name) => {
+  const handleDeleteMessage = (id, name) => {
     if (!window.confirm(`DISSOLVE VISITOR TRANSMISSION FROM "${name.toUpperCase()}"?`)) return;
-    try {
-      const { error } = await supabase.from("contact_messages").delete().eq("id", id);
-      if (error) throw error;
-      fetchCMSData();
-    } catch (err) {
-      alert("Error: " + err.message);
-    }
+    const updated = messages.filter(m => m.id !== id);
+    localStorage.setItem("portfolio_messages", JSON.stringify(updated));
+    setMessages(updated);
   };
 
   if (!session) {

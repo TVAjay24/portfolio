@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
-import { supabase } from "./supabase";
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import AboutMe from "./components/AboutMe";
@@ -52,22 +51,24 @@ function App() {
   const [modalOpen, setModalOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Monitor Supabase Auth state dynamically
+  // Monitor local Auth state dynamically
   useEffect(() => {
-    // Fetch initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
+    const localSession = sessionStorage.getItem("admin_session");
+    if (localSession) {
+      setSession(JSON.parse(localSession));
+    }
 
-    // Listen to changes (login / logout)
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
-    });
+    const checkSession = () => {
+      const sess = sessionStorage.getItem("admin_session");
+      setSession(sess ? JSON.parse(sess) : null);
+    };
+
+    window.addEventListener("storage", checkSession);
+    window.addEventListener("admin_auth_change", checkSession);
 
     return () => {
-      if (subscription) subscription.unsubscribe();
+      window.removeEventListener("storage", checkSession);
+      window.removeEventListener("admin_auth_change", checkSession);
     };
   }, []);
 

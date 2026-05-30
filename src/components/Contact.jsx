@@ -89,7 +89,7 @@ const Contact = ({ isAdmin }) => {
   const [sentSuccess, setSentSuccess] = useState(false);
   const [msgError, setMsgError] = useState("");
 
-  const handleTransmitSignal = async (e) => {
+  const handleTransmitSignal = (e) => {
     e.preventDefault();
     if (!msgForm.name.trim() || !msgForm.email.trim() || !msgForm.message.trim()) return;
 
@@ -97,24 +97,30 @@ const Contact = ({ isAdmin }) => {
     setMsgError("");
     setSentSuccess(false);
 
-    try {
-      const response = await fetch(`${API_BASE}/api/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(msgForm),
-      });
+    // Simulate cyber-handshake transmission delay
+    setTimeout(() => {
+      const newMessage = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: msgForm.name.trim(),
+        email: msgForm.email.trim(),
+        message: msgForm.message.trim(),
+        created_at: new Date().toISOString()
+      };
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Uplink terminal transmission failed");
+      // Load inbox, append new transmission, save
+      let localMsgs = localStorage.getItem("portfolio_messages");
+      let messagesArray = [];
+      if (localMsgs) {
+        try { messagesArray = JSON.parse(localMsgs); } catch (e) {}
+      }
+      messagesArray = [newMessage, ...messagesArray];
+      localStorage.setItem("portfolio_messages", JSON.stringify(messagesArray));
 
       setSentSuccess(true);
       setMsgForm({ name: "", email: "", message: "" });
-      setTimeout(() => setSentSuccess(false), 5000);
-    } catch (err) {
-      setMsgError(err.message || "Failed to transmit signal.");
-    } finally {
       setSendingMsg(false);
-    }
+      setTimeout(() => setSentSuccess(false), 5000);
+    }, 800);
   };
 
   // Admin edit state
@@ -137,14 +143,15 @@ const Contact = ({ isAdmin }) => {
     link: "",
     badge: "ACTIVE",
   });
+
   const staticFallback = [
     {
       id: "github",
       title: "GITHUB UPLINK",
       jp_name: "ソースコード",
       icon_type: "github",
-      line: "> HANDLE // TVAjay",
-      link: "https://github.com/TVAjay",
+      line: "> HANDLE // TVAjay24",
+      link: "https://github.com/TVAjay24",
       badge: "CONNECTED",
     },
     {
@@ -176,23 +183,19 @@ const Contact = ({ isAdmin }) => {
     },
   ];
 
-  // Fetch dynamic contacts from Supabase
-  const fetchContactMethods = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("contact_methods")
-        .select("*")
-        .order("sort_order", { ascending: true });
-
-      if (error) throw error;
-      if (data && data.length > 0) {
-        setContactCards(data);
-      }
-    } catch (err) {
-      console.warn("Failed to load dynamic contact uplinks, loading defaults.");
-    } finally {
-      setLoading(false);
+  // Fetch dynamic contacts from localStorage
+  const fetchContactMethods = () => {
+    let localContacts = localStorage.getItem("portfolio_contacts");
+    if (!localContacts) {
+      localStorage.setItem("portfolio_contacts", JSON.stringify(staticFallback));
+      localContacts = JSON.stringify(staticFallback);
     }
+    try {
+      setContactCards(JSON.parse(localContacts));
+    } catch (err) {
+      setContactCards(staticFallback);
+    }
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -200,7 +203,7 @@ const Contact = ({ isAdmin }) => {
   }, []);
 
   const getContactCards = () => {
-    return contactCards.length > 0 ? contactCards : staticFallback;
+    return contactCards;
   };
 
   const getIconComponent = (iconType) => {
@@ -214,34 +217,22 @@ const Contact = ({ isAdmin }) => {
   };
 
   // Save changes
-  const handleSaveCard = async (cardId) => {
-    try {
-      const updated = {
-        title: cardForm.title.trim(),
-        jp_name: cardForm.jp_name.trim(),
-        line: cardForm.line.trim(),
-        link: cardForm.link.trim(),
-        badge: cardForm.badge.trim(),
-      };
+  const handleSaveCard = (cardId) => {
+    const updated = {
+      title: cardForm.title.trim(),
+      jp_name: cardForm.jp_name.trim(),
+      line: cardForm.line.trim(),
+      link: cardForm.link.trim(),
+      badge: cardForm.badge.trim(),
+    };
 
-      if (typeof cardId === "string" && cardId.length > 20) {
-        const { error } = await supabase
-          .from("contact_methods")
-          .update(updated)
-          .eq("id", cardId);
+    setContactCards((prev) => {
+      const next = prev.map((c) => (c.id === cardId ? { ...c, ...updated } : c));
+      localStorage.setItem("portfolio_contacts", JSON.stringify(next));
+      return next;
+    });
 
-        if (error) throw error;
-      }
-
-      setContactCards((prev) => {
-        const listToMap = prev.length > 0 ? prev : staticFallback;
-        return listToMap.map((c) => (c.id === cardId ? { ...c, ...updated } : c));
-      });
-
-      setEditingCardId(null);
-    } catch (err) {
-      alert("Database error: " + err.message);
-    }
+    setEditingCardId(null);
   };
 
   const startEditCard = (e, c) => {
@@ -257,61 +248,41 @@ const Contact = ({ isAdmin }) => {
     });
   };
 
-  const handleCreateContact = async (e) => {
+  const handleCreateContact = (e) => {
     e.preventDefault();
     if (!newContact.title.trim()) return;
 
-    try {
-      const activeContacts = getContactCards();
-      const insertPayload = {
-        title: newContact.title.trim(),
-        jp_name: newContact.jp_name.trim() || "コンタクト",
-        icon_type: newContact.icon_type,
-        line: newContact.line.trim() || "> HANDLE // UNKNOWN",
-        link: newContact.link.trim() || "#",
-        badge: newContact.badge.trim() || "ACTIVE",
-        sort_order: activeContacts.length + 1,
-      };
+    const insertPayload = {
+      id: Math.random().toString(36).substr(2, 9),
+      title: newContact.title.trim(),
+      jp_name: newContact.jp_name.trim() || "コンタクト",
+      icon_type: newContact.icon_type,
+      line: newContact.line.trim() || "> HANDLE // UNKNOWN",
+      link: newContact.link.trim() || "#",
+      badge: newContact.badge.trim() || "ACTIVE",
+      sort_order: contactCards.length + 1,
+    };
 
-      const { data, error } = await supabase
-        .from("contact_methods")
-        .insert([insertPayload])
-        .select();
+    setContactCards((prev) => {
+      const next = [...prev, insertPayload];
+      localStorage.setItem("portfolio_contacts", JSON.stringify(next));
+      return next;
+    });
 
-      if (error) throw error;
-
-      if (data) {
-        setContactCards((prev) => [...prev, data[0]]);
-        setNewContact({ title: "", jp_name: "", icon_type: "github", line: "", link: "", badge: "ACTIVE" });
-        setAddFormOpen(false);
-      }
-    } catch (err) {
-      alert("Failed to inject new contact uplink: " + err.message);
-    }
+    setNewContact({ title: "", jp_name: "", icon_type: "github", line: "", link: "", badge: "ACTIVE" });
+    setAddFormOpen(false);
   };
 
-  const handleDeleteContact = async (e, cardId, title) => {
+  const handleDeleteContact = (e, cardId, title) => {
     e.preventDefault();
     e.stopPropagation();
     if (!window.confirm(`DISSOLVE UPLINK CHANNEL: "${title}"?`)) return;
 
-    try {
-      if (typeof cardId === "string" && cardId.length > 20) {
-        const { error } = await supabase
-          .from("contact_methods")
-          .delete()
-          .eq("id", cardId);
-
-        if (error) throw error;
-      }
-
-      setContactCards((prev) => {
-        const listToFilter = prev.length > 0 ? prev : staticFallback;
-        return listToFilter.filter((c) => c.id !== cardId);
-      });
-    } catch (err) {
-      alert("Failed to delete contact: " + err.message);
-    }
+    setContactCards((prev) => {
+      const next = prev.filter((c) => c.id !== cardId);
+      localStorage.setItem("portfolio_contacts", JSON.stringify(next));
+      return next;
+    });
   };
 
   const activeCards = getContactCards();

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { supabase } from "../supabase";
 import { Terminal, X, Lock, Mail, ShieldAlert, Check } from "lucide-react";
 
 const AdminLoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
@@ -11,35 +10,33 @@ const AdminLoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
 
   if (!isOpen) return null;
 
-  const handleLogin = async (e) => {
+  const handleLogin = (e) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg("");
     setSuccess(false);
 
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+    // Simulate cyber-handshake delay
+    setTimeout(() => {
+      if (email.trim().toLowerCase() === "tvajay0@gmail.com") {
+        setSuccess(true);
+        const fakeSession = { user: { email: "tvajay0@gmail.com" } };
+        sessionStorage.setItem("admin_session", JSON.stringify(fakeSession));
+        window.dispatchEvent(new Event("admin_auth_change"));
 
-      if (error) {
-        throw new Error(error.message);
+        setTimeout(() => {
+          onLoginSuccess(fakeSession);
+          onClose();
+          setEmail("");
+          setPassword("");
+          setSuccess(false);
+          setLoading(false);
+        }, 1200);
+      } else {
+        setErrorMsg("Unauthorized administrator coordinates.");
+        setLoading(false);
       }
-
-      setSuccess(true);
-      setTimeout(() => {
-        onLoginSuccess(data.session);
-        onClose();
-        setEmail("");
-        setPassword("");
-        setSuccess(false);
-      }, 1500);
-    } catch (err) {
-      setErrorMsg(err.message || "Failed to authorize session.");
-    } finally {
-      setLoading(false);
-    }
+    }, 600);
   };
 
   return (

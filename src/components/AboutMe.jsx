@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import RevealSection from "./RevealSection";
-import { supabase } from "../supabase";
 import { Cpu, Zap, Edit2, Check, X, Edit, CheckSquare, Plus, Trash2 } from "lucide-react";
 
 const AboutMe = ({ isAdmin }) => {
@@ -9,7 +8,7 @@ const AboutMe = ({ isAdmin }) => {
     level: 26,
     xp_percent: 92,
     class: "CSE STUDENT",
-    guild: "VVCE, VTU AFFILIATED",
+    guild: "VVCE",
     hp_current: 980,
     hp_max: 980,
     mp_current: 920,
@@ -65,95 +64,72 @@ const AboutMe = ({ isAdmin }) => {
     },
   ];
 
-  // Fetch real-time RPG stats & biography from Supabase
-  const fetchStatsAndBio = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("profile_stats")
-        .select("*")
-        .limit(1)
-        .single();
-
-      if (error) throw error;
-      if (data) {
-        setStats(data);
-        if (data.biography) setBioText(data.biography);
-      }
-    } catch (err) {
-      console.warn("Failed to load RPG stats from DB, loading static backup.");
-    }
+  const defaultStats = {
+    character_name: "AJAY",
+    level: 26,
+    xp_percent: 92,
+    class: "CSE STUDENT",
+    guild: "VVCE",
+    hp_current: 980,
+    hp_max: 980,
+    mp_current: 920,
+    mp_max: 1000,
+    player_rank: "LV.26",
+    biography: "I am a first-year B.E. Computer Science student at Vidyavardhaka College of Engineering (VVCE), Mysuru, affiliated with VTU. Deeply passionate about modern web technologies and full-stack architecture, I also enjoy exploring game development, diving into immersive anime worlds, and building sleek, responsive systems that bridge functional design with engaging storytelling."
   };
 
-  // Fetch dynamic passive traits from database
-  const fetchPassiveSkills = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("passive_skills")
-        .select("*")
-        .order("sort_order", { ascending: true });
-
-      if (error) throw error;
-      if (data && data.length > 0) {
-        setPassiveSkills(data);
-      }
-    } catch (err) {
-      console.warn("Failed to load passive skills, loading fallback.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Fetch real-time RPG stats & biography from localStorage
   useEffect(() => {
-    fetchStatsAndBio();
-    fetchPassiveSkills();
+    let localProfile = localStorage.getItem("portfolio_profile");
+    if (!localProfile) {
+      localStorage.setItem("portfolio_profile", JSON.stringify(defaultStats));
+      localProfile = JSON.stringify(defaultStats);
+    }
+    try {
+      const parsedStats = JSON.parse(localProfile);
+      setStats(parsedStats);
+      if (parsedStats.biography) setBioText(parsedStats.biography);
+    } catch (err) {
+      console.warn("Error reading local stats cache.");
+    }
+
+    // Fetch dynamic passive traits from localStorage
+    let localPassives = localStorage.getItem("portfolio_passives");
+    if (!localPassives) {
+      localStorage.setItem("portfolio_passives", JSON.stringify(staticFallbackSkills));
+      localPassives = JSON.stringify(staticFallbackSkills);
+    }
+    try {
+      setPassiveSkills(JSON.parse(localPassives));
+    } catch (err) {
+      setPassiveSkills(staticFallbackSkills);
+    }
+    setLoading(false);
   }, []);
 
-  // Update RPG stats in Supabase
-  const saveStatUpdate = async (field, value) => {
-    try {
-      const updateData = { [field]: value };
-      
+  // Update RPG stats in localStorage
+  const saveStatUpdate = (field, value) => {
+    setStats((prev) => {
+      const next = { ...prev, [field]: value };
       if (field === "level") {
-        updateData.player_rank = `LV.${value}`;
+        next.player_rank = `LV.${value}`;
       }
-
-      const { error } = await supabase
-        .from("profile_stats")
-        .update(updateData)
-        .eq("character_name", "AJAY");
-
-      if (error) throw error;
-
-      setStats((prev) => {
-        const next = { ...prev, [field]: value };
-        if (field === "level") {
-          next.player_rank = `LV.${value}`;
-        }
-        return next;
-      });
-
-      setEditingField(null);
-    } catch (err) {
-      alert("Database error: " + err.message);
-    }
+      localStorage.setItem("portfolio_profile", JSON.stringify(next));
+      return next;
+    });
+    setEditingField(null);
   };
 
   // Update biography narrative
-  const handleSaveBio = async () => {
-    try {
-      const trimmedBio = editBioVal.trim() || bioText;
-      const { error } = await supabase
-        .from("profile_stats")
-        .update({ biography: trimmedBio })
-        .eq("character_name", "AJAY");
-
-      if (error) throw error;
-
-      setBioText(trimmedBio);
-      setIsEditingBio(false);
-    } catch (err) {
-      alert("Database error: " + err.message);
-    }
+  const handleSaveBio = () => {
+    const trimmedBio = editBioVal.trim() || bioText;
+    setBioText(trimmedBio);
+    setStats((prev) => {
+      const next = { ...prev, biography: trimmedBio };
+      localStorage.setItem("portfolio_profile", JSON.stringify(next));
+      return next;
+    });
+    setIsEditingBio(false);
   };
 
   // Edit passive skill triggers
@@ -166,84 +142,56 @@ const AboutMe = ({ isAdmin }) => {
     });
   };
 
-  const handleSavePassive = async (passiveId) => {
-    try {
-      const updated = {
-        name: passiveForm.name,
-        jp_name: passiveForm.jp_name,
-        description: passiveForm.description,
-      };
+  const handleSavePassive = (passiveId) => {
+    const updated = {
+      name: passiveForm.name,
+      jp_name: passiveForm.jp_name,
+      description: passiveForm.description,
+    };
 
-      if (typeof passiveId === "string" && passiveId.length > 20) {
-        const { error } = await supabase
-          .from("passive_skills")
-          .update(updated)
-          .eq("id", passiveId);
+    setPassiveSkills((prev) => {
+      const next = prev.map((s) => (s.id === passiveId ? { ...s, ...updated } : s));
+      localStorage.setItem("portfolio_passives", JSON.stringify(next));
+      return next;
+    });
 
-        if (error) throw error;
-      }
-
-      setPassiveSkills((prev) => {
-        const listToMap = prev.length > 0 ? prev : staticFallbackSkills;
-        return listToMap.map((s) => (s.id === passiveId ? { ...s, ...updated } : s));
-      });
-
-      setEditingPassiveId(null);
-    } catch (err) {
-      alert("Database error: " + err.message);
-    }
+    setEditingPassiveId(null);
   };
 
-  const handleAddPassive = async (e) => {
+  const handleAddPassive = (e) => {
     e.preventDefault();
     if (!newPassive.name.trim()) return;
 
-    try {
-      const insertedObj = {
-        name: newPassive.name,
-        jp_name: newPassive.jp_name || "パッシブ",
-        description: newPassive.description || "Synthesizing core parameters...",
-        sort_order: passiveSkills.length + 1,
-      };
+    const insertedObj = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: newPassive.name,
+      jp_name: newPassive.jp_name || "パッシブ",
+      description: newPassive.description || "Synthesizing core parameters...",
+      sort_order: passiveSkills.length + 1,
+    };
 
-      const { data, error } = await supabase
-        .from("passive_skills")
-        .insert([insertedObj])
-        .select();
+    setPassiveSkills((prev) => {
+      const next = [...prev, insertedObj];
+      localStorage.setItem("portfolio_passives", JSON.stringify(next));
+      return next;
+    });
 
-      if (error) throw error;
-
-      if (data) {
-        setPassiveSkills((prev) => [...prev, data[0]]);
-        setNewPassive({ name: "", jp_name: "", description: "" });
-        setAddPassiveOpen(false);
-      }
-    } catch (err) {
-      alert("Failed to inject passive skill: " + err.message);
-    }
+    setNewPassive({ name: "", jp_name: "", description: "" });
+    setAddPassiveOpen(false);
   };
 
-  const handleDeletePassive = async (passiveId, name) => {
+  const handleDeletePassive = (passiveId, name) => {
     if (!window.confirm(`DELETE PASSIVE TRAIT: "${name}"?`)) return;
 
-    try {
-      if (typeof passiveId === "string" && passiveId.length > 20) {
-        const { error } = await supabase
-          .from("passive_skills")
-          .delete()
-          .eq("id", passiveId);
-
-        if (error) throw error;
-      }
-
-      setPassiveSkills((prev) => prev.filter((s) => s.id !== passiveId));
-    } catch (err) {
-      alert("Database error: " + err.message);
-    }
+    setPassiveSkills((prev) => {
+      const next = prev.filter((s) => s.id !== passiveId);
+      localStorage.setItem("portfolio_passives", JSON.stringify(next));
+      return next;
+    });
   };
 
   const getPassiveSkills = () => {
-    return passiveSkills.length > 0 ? passiveSkills : staticFallbackSkills;
+    return passiveSkills;
   };
 
   const handleEditClick = (field, currentVal) => {

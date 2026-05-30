@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from "react";
 import RevealSection from "./RevealSection";
-import { supabase } from "../supabase";
 import { Award, Star, Calendar, Terminal, Edit, Check, X, Plus, Trash2 } from "lucide-react";
 
 const Achievements = ({ isAdmin }) => {
@@ -51,23 +50,19 @@ const Achievements = ({ isAdmin }) => {
     },
   ];
 
-  // Fetch achievements from Supabase
-  const fetchAchievements = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("achievements")
-        .select("*")
-        .order("sort_order", { ascending: true });
-
-      if (error) throw error;
-      if (data && data.length > 0) {
-        setAchievementsList(data);
-      }
-    } catch (err) {
-      console.warn("Database achievements missing or offline, loading static backup:", err.message);
-    } finally {
-      setLoading(false);
+  // Fetch achievements from localStorage
+  const fetchAchievements = () => {
+    let localAchievements = localStorage.getItem("portfolio_achievements");
+    if (!localAchievements) {
+      localStorage.setItem("portfolio_achievements", JSON.stringify(staticFallback));
+      localAchievements = JSON.stringify(staticFallback);
     }
+    try {
+      setAchievementsList(JSON.parse(localAchievements));
+    } catch (err) {
+      setAchievementsList(staticFallback);
+    }
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -75,7 +70,7 @@ const Achievements = ({ isAdmin }) => {
   }, []);
 
   const getAchievements = () => {
-    return achievementsList.length > 0 ? achievementsList : staticFallback;
+    return achievementsList;
   };
 
   const handleEditClick = (t) => {
@@ -90,92 +85,58 @@ const Achievements = ({ isAdmin }) => {
     });
   };
 
-  const handleSaveTrophy = async (trophyId) => {
-    try {
-      const updatedTrophy = {
-        title: trophyForm.title,
-        jp_name: trophyForm.jp_name,
-        award: trophyForm.award,
-        date: trophyForm.date,
-        xp_reward: trophyForm.xp_reward,
-        description: trophyForm.description,
-      };
+  const handleSaveTrophy = (trophyId) => {
+    const updatedTrophy = {
+      title: trophyForm.title,
+      jp_name: trophyForm.jp_name,
+      award: trophyForm.award,
+      date: trophyForm.date,
+      xp_reward: trophyForm.xp_reward,
+      description: trophyForm.description,
+    };
 
-      // Only attempt write if ID is standard uuid (i.e. not static fallback string)
-      if (typeof trophyId === "string" && trophyId.length > 20) {
-        const { error } = await supabase
-          .from("achievements")
-          .update(updatedTrophy)
-          .eq("id", trophyId);
+    setAchievementsList((prev) => {
+      const next = prev.map((t) => (t.id === trophyId ? { ...t, ...updatedTrophy } : t));
+      localStorage.setItem("portfolio_achievements", JSON.stringify(next));
+      return next;
+    });
 
-        if (error) throw error;
-      }
-
-      // Sync local state
-      setAchievementsList((prev) => {
-        const listToMap = prev.length > 0 ? prev : staticFallback;
-        return listToMap.map((t) => (t.id === trophyId ? { ...t, ...updatedTrophy } : t));
-      });
-
-      setEditingTrophyId(null);
-    } catch (err) {
-      alert("Database error: " + err.message);
-    }
+    setEditingTrophyId(null);
   };
 
-  const handleCreateTrophy = async (e) => {
+  const handleCreateTrophy = (e) => {
     e.preventDefault();
     if (!newTrophy.title.trim()) return;
 
-    try {
-      const activeTrophies = getAchievements();
-      const insertPayload = {
-        title: newTrophy.title.trim(),
-        jp_name: newTrophy.jp_name.trim() || "トロフィー",
-        award: newTrophy.award.trim() || "Quest Objective Achieved",
-        date: newTrophy.date.trim() || "UNKNOWN DATE",
-        xp_reward: newTrophy.xp_reward.trim() || "+500 XP UNLOCKED",
-        description: newTrophy.description.trim() || "Synthesized trophy details...",
-        sort_order: activeTrophies.length + 1,
-      };
+    const insertPayload = {
+      id: Math.random().toString(36).substr(2, 9),
+      title: newTrophy.title.trim(),
+      jp_name: newTrophy.jp_name.trim() || "トロフィー",
+      award: newTrophy.award.trim() || "Quest Objective Achieved",
+      date: newTrophy.date.trim() || "UNKNOWN DATE",
+      xp_reward: newTrophy.xp_reward.trim() || "+500 XP UNLOCKED",
+      description: newTrophy.description.trim() || "Synthesized trophy details...",
+      sort_order: achievementsList.length + 1,
+    };
 
-      const { data, error } = await supabase
-        .from("achievements")
-        .insert([insertPayload])
-        .select();
+    setAchievementsList((prev) => {
+      const next = [...prev, insertPayload];
+      localStorage.setItem("portfolio_achievements", JSON.stringify(next));
+      return next;
+    });
 
-      if (error) throw error;
-
-      if (data) {
-        setAchievementsList((prev) => [...prev, data[0]]);
-        setNewTrophy({ title: "", jp_name: "", award: "", date: "", xp_reward: "", description: "" });
-        setAddFormOpen(false);
-      }
-    } catch (err) {
-      alert("Failed to inject new trophy: " + err.message);
-    }
+    setNewTrophy({ title: "", jp_name: "", award: "", date: "", xp_reward: "", description: "" });
+    setAddFormOpen(false);
   };
 
-  const handleDeleteTrophy = async (trophyId, name) => {
+  const handleDeleteTrophy = (trophyId, name) => {
     if (!window.confirm(`DISSOLVE TROPHY: "${name}"?`)) return;
 
-    try {
-      if (typeof trophyId === "string" && trophyId.length > 20) {
-        const { error } = await supabase
-          .from("achievements")
-          .delete()
-          .eq("id", trophyId);
-
-        if (error) throw error;
-      }
-
-      setAchievementsList((prev) => {
-        const listToFilter = prev.length > 0 ? prev : staticFallback;
-        return listToFilter.filter((t) => t.id !== trophyId);
-      });
-    } catch (err) {
-      alert("Failed to delete trophy: " + err.message);
-    }
+    setAchievementsList((prev) => {
+      const next = prev.filter((t) => t.id !== trophyId);
+      localStorage.setItem("portfolio_achievements", JSON.stringify(next));
+      return next;
+    });
   };
 
   const currentTrophies = getAchievements();
