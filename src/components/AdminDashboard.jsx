@@ -92,7 +92,7 @@ const AdminDashboard = () => {
           id: "msg1",
           name: "Asuka Langley",
           email: "asuka@nerv.org",
-          message: "Hey Ajay! This is a secure visitor transmission system check. /// SIGNAL_OUT",
+          message: "Hey T V Ajay! This is a secure visitor transmission system check. /// SIGNAL_OUT",
           created_at: new Date().toISOString()
         }
       ];
@@ -212,7 +212,7 @@ const AdminDashboard = () => {
             <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
               <Terminal size={18} style={{ color: "var(--accent-purple)" }} />
               <span style={{ fontFamily: "var(--font-hud)", fontSize: "0.95rem", letterSpacing: "2px", fontWeight: "700", color: "#fff" }}>
-                AJAY_CMS_COCKPIT
+                T V AJAY_CMS_COCKPIT
               </span>
             </div>
             <button type="button" onClick={() => navigate("/")} className="hud-btn" style={{ padding: "4px 10px", fontSize: "0.6rem", display: "flex", alignItems: "center", gap: "4px" }}>
@@ -279,7 +279,7 @@ const AdminDashboard = () => {
             <h1 style={{ fontFamily: "var(--font-hud)", fontSize: "1.6rem", display: "flex", alignItems: "center", gap: "8px", letterSpacing: "2px" }}>
               <Terminal style={{ color: "var(--accent-cyan)" }} /> SECURE_CMS_COCKPIT
             </h1>
-            <span style={{ fontFamily: "var(--font-hud)", fontSize: "0.65rem", color: "var(--accent-purple)", letterSpacing: "1.5px" }}>[ SESSION_ACTIVE // AJAY ]</span>
+            <span style={{ fontFamily: "var(--font-hud)", fontSize: "0.65rem", color: "var(--accent-purple)", letterSpacing: "1.5px" }}>[ SESSION_ACTIVE // T V AJAY ]</span>
           </div>
           
           <div style={{ display: "flex", gap: "12px" }}>

@@ -1,5 +1,5 @@
 -- ====================================================================
--- Ajay's Portfolio CMS Database Schema Setup & RLS Configuration
+-- T V Ajay's Portfolio CMS Database Schema Setup & RLS Configuration
 -- Copy and paste this script directly into your Supabase SQL Editor!
 -- ====================================================================
 
@@ -94,7 +94,7 @@ CREATE TABLE public.contact_messages (
 
 -- Seed an initial transmission message
 INSERT INTO public.contact_messages (name, email, message)
-VALUES ('Asuka Langley', 'asuka@nerv.org', 'Hey Ajay! I checked out your Gaming HUD portfolio and it looks incredibly sick. Let''s collaborate on some cyberpunk web designs! /// SIGNAL_OUT');
+VALUES ('Asuka Langley', 'asuka@nerv.org', 'Hey T V Ajay! I checked out your Gaming HUD portfolio and it looks incredibly sick. Let''s collaborate on some cyberpunk web designs! /// SIGNAL_OUT');
 
 -- --------------------------------------------------------------------
 -- 4. Configure Row Level Security (RLS) & Policies

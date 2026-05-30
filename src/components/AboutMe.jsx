@@ -4,7 +4,7 @@ import { Cpu, Zap, Edit2, Check, X, Edit, CheckSquare, Plus, Trash2 } from "luci
 
 const AboutMe = ({ isAdmin }) => {
   const [stats, setStats] = useState({
-    character_name: "AJAY",
+    character_name: "T V AJAY",
     level: 26,
     xp_percent: 92,
     class: "CSE STUDENT",
@@ -65,7 +65,7 @@ const AboutMe = ({ isAdmin }) => {
   ];
 
   const defaultStats = {
-    character_name: "AJAY",
+    character_name: "T V AJAY",
     level: 26,
     xp_percent: 92,
     class: "CSE STUDENT",
@@ -288,7 +288,7 @@ const AboutMe = ({ isAdmin }) => {
           {/* Card Top Branding */}
           <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-hud)", fontSize: "0.7rem", color: "var(--accent-blue)" }}>
             <span>SEC_STATUS: SECURE</span>
-            <span>ID: AJAY_8923</span>
+            <span>ID: T V AJAY_8923</span>
           </div>
 
           {/* SVG Character Avatar Silhouette / Energy Core */}

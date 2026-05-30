@@ -109,7 +109,7 @@ const Navbar = ({ isAdmin, onAdminTrigger }) => {
           }}
         >
           <Terminal size={18} className="text-glow-blue" style={{ color: "var(--accent-blue)" }} />
-          <span style={{ color: "var(--accent-blue)" }}>AJAY</span>
+          <span style={{ color: "var(--accent-blue)" }}>T V AJAY</span>
           <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>//</span>
           <span style={{ fontSize: "0.8rem", color: "var(--accent-purple)", letterSpacing: "2px" }}>HUD_v1.0</span>
         </div>

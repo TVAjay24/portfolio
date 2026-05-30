@@ -75,7 +75,7 @@ const handleWriteResponse = (res, data, error, statusCode = 200) => {
 
 // ROOT Health Check
 app.get('/', (req, res) => {
-  res.json({ status: 'active', service: 'Ajay\'s Dynamic HUD Portfolio CMS REST API Core' });
+  res.json({ status: 'active', service: 'T V Ajay\'s Dynamic HUD Portfolio CMS REST API Core' });
 });
 
 // ==========================================
@@ -101,7 +101,7 @@ app.put('/api/profile', requireAdmin, async (req, res) => {
     const { data, error } = await supabaseAdmin
       .from('profile_stats')
       .update(payload)
-      .eq('character_name', 'AJAY')
+      .eq('character_name', 'T V AJAY')
       .select();
     handleWriteResponse(res, data, error);
   } catch (err) {

@@ -46,7 +46,7 @@ const Footer = () => {
         {/* Right Side: Copyright */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <Terminal size={10} />
-          <span>© {currentYear} AJAY</span>
+          <span>© {currentYear} T V AJAY</span>
           <span style={{ color: "var(--accent-blue)" }}>//</span>
           <span>ALL RIGHTS COMPLED</span>
         </div>

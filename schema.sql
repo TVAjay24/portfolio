@@ -212,7 +212,7 @@ VALUES ('YOUR_POST_TITLE', 'placeholder-chronicle', '# Welcome to your Chronicle
 
 -- Contact Messages Placeholder
 INSERT INTO public.contact_messages (name, email, message) 
-VALUES ('YOUR_VISITOR_NAME', 'visitor@domain.org', 'Hey Ajay! This is a secure visitor transmission system check. /// SIGNAL_OUT');
+VALUES ('YOUR_VISITOR_NAME', 'visitor@domain.org', 'Hey T V Ajay! This is a secure visitor transmission system check. /// SIGNAL_OUT');
 
 -- --------------------------------------------------------------------
 -- 12. Configure Row Level Security (RLS) & Policies

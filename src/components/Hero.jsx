@@ -306,10 +306,10 @@ const Hero = ({ isAdmin }) => {
           <div className="glitch-wrapper">
             <span
               className="glitch-text"
-              data-text="AJAY"
+              data-text="T V AJAY"
               style={{ fontSize: "5rem", letterSpacing: "8px" }}
             >
-              AJAY
+              T V AJAY
             </span>
           </div>
         </h1>

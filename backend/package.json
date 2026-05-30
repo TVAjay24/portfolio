@@ -1,7 +1,7 @@
 {
   "name": "portfolio-backend",
   "version": "1.0.0",
-  "description": "Express.js REST API CMS backend for Ajay's portfolio",
+  "description": "Express.js REST API CMS backend for T V Ajay's portfolio",
   "main": "server.js",
   "type": "module",
   "scripts": {
