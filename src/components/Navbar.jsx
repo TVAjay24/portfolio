@@ -65,7 +65,7 @@ const Navbar = ({ isAdmin, onAdminTrigger }) => {
     }
     localStorage.clear();
     sessionStorage.clear();
-    window.location.href = '/';
+    window.location.replace('/');
   };
 
   return (
@@ -227,7 +227,16 @@ const Navbar = ({ isAdmin, onAdminTrigger }) => {
           {/* Sound / Visualizer graphic accent or Admin exit */}
           {isAdmin ? (
             <button
-              onClick={handleSignOut}
+              onClick={async () => {
+                try {
+                  await supabase.auth.signOut();
+                } catch (e) {
+                  console.warn("Supabase signout failed", e);
+                }
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.replace('/');
+              }}
               className="hud-btn hud-btn-purple"
               style={{
                 display: "flex",

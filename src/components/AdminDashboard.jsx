@@ -138,7 +138,7 @@ const AdminDashboard = () => {
     }
     localStorage.clear();
     sessionStorage.clear();
-    window.location.href = '/';
+    window.location.replace('/');
   };
 
   // ==========================================
@@ -283,7 +283,7 @@ const AdminDashboard = () => {
           </div>
           
           <div style={{ display: "flex", gap: "12px" }}>
-            <button onClick={() => navigate("/")} className="hud-btn" style={{ padding: "8px 16px", fontSize: "0.7rem", display: "flex", alignItems: "center", gap: "6px" }}>
+            <button onClick={() => window.location.replace('/')} className="hud-btn" style={{ padding: "8px 16px", fontSize: "0.7rem", display: "flex", alignItems: "center", gap: "6px" }}>
               <ArrowLeft size={12} /> BACK_TO_SITE
             </button>
             <button onClick={handleLogout} className="hud-btn hud-btn-purple" style={{ padding: "8px 16px", fontSize: "0.7rem", display: "flex", alignItems: "center", gap: "6px" }}>
