@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Terminal, Lock, Mail, Compass, Award, ShieldAlert, Check, Plus, Trash2, Edit, LogOut, ArrowLeft, X } from "lucide-react";
+import { supabase } from "../supabase";
 
 
 const AdminDashboard = () => {
@@ -25,11 +26,19 @@ const AdminDashboard = () => {
     const localSession = sessionStorage.getItem("admin_session");
     if (localSession) {
       setSession(JSON.parse(localSession));
+    } else {
+      // If someone is not authenticated and tries to go to /admin, redirect them back to /
+      window.location.href = "/";
+      return;
     }
 
     const checkSession = () => {
       const sess = sessionStorage.getItem("admin_session");
-      setSession(sess ? JSON.parse(sess) : null);
+      if (!sess) {
+        window.location.href = "/";
+      } else {
+        setSession(JSON.parse(sess));
+      }
     };
 
     window.addEventListener("storage", checkSession);
@@ -121,11 +130,15 @@ const AdminDashboard = () => {
     }, 600);
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("admin_session");
-    window.dispatchEvent(new Event("admin_auth_change"));
-    setSession(null);
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn("Supabase signout failed", e);
+    }
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = '/';
   };
 
   // ==========================================
