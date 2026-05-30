@@ -57,8 +57,12 @@ const Navbar = ({ isAdmin, onAdminTrigger }) => {
     }
   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
+  const handleSignOut = () => {
+    sessionStorage.removeItem("admin_session");
+    window.dispatchEvent(new Event("admin_auth_change"));
+    if (window.location.pathname === "/admin") {
+      window.location.href = "/";
+    }
   };
 
   return (
