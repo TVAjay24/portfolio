@@ -31,10 +31,10 @@
         position: fixed;
         top: 0;
         left: 0;
-        width: 100px;
-        height: 100px;
-        margin-top: -50px;
-        margin-left: -50px;
+        width: 60px;
+        height: 60px;
+        margin-top: -30px;
+        margin-left: -30px;
         pointer-events: none;
         z-index: 9999999;
         mix-blend-mode: screen;
@@ -128,7 +128,7 @@
       .hud-hover .hud-outer-ring {
         transform: scale(1.6);
         stroke-width: 1.2px;
-        filter: drop-shadow(0 0 6px rgba(0, 255, 255, 0.8));
+        filter: drop-shadow(0 0 4px rgba(0, 255, 255, 0.8));
       }
 
       .hud-inner-ring {
@@ -154,7 +154,7 @@
       .hud-hover .hud-ticks {
         transform: rotate(45deg);
         opacity: 1;
-        filter: drop-shadow(0 0 3px rgba(0, 255, 255, 0.9));
+        filter: drop-shadow(0 0 2px rgba(0, 255, 255, 0.9));
       }
 
       /* Center Dot Glow */
@@ -164,14 +164,14 @@
       }
 
       .hud-hover .hud-center-dot {
-        filter: drop-shadow(0 0 4px #FF00FF);
+        filter: drop-shadow(0 0 3px #FF00FF);
       }
 
       /* Particle Explosions */
       .hud-click-particle {
         position: absolute;
-        width: 4px;
-        height: 4px;
+        width: 3px;
+        height: 3px;
         border-radius: 50%;
         pointer-events: none;
         animation: hud-particle-fade-out 400ms cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
@@ -319,7 +319,7 @@
       particleContainer.style.mixBlendMode = 'screen';
 
       const particleCount = 8;
-      const travelDistance = 35; // px
+      const travelDistance = 22; // px
 
       for (let i = 0; i < particleCount; i++) {
         const angle = (i / particleCount) * Math.PI * 2;
@@ -330,7 +330,7 @@
         const particle = document.createElement('div');
         particle.className = 'hud-click-particle';
         particle.style.background = isCyan ? '#00FFFF' : '#FF00FF';
-        particle.style.boxShadow = isCyan ? '0 0 4px #00FFFF' : '0 0 4px #FF00FF';
+        particle.style.boxShadow = isCyan ? '0 0 3px #00FFFF' : '0 0 3px #FF00FF';
         particle.style.setProperty('--tx', `${tx}px`);
         particle.style.setProperty('--ty', `${ty}px`);
 
