@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Terminal, X, Lock, Mail, ShieldAlert, Check } from "lucide-react";
+import { supabase } from "../supabase";
 
 const AdminLoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
   const [email, setEmail] = useState("");
@@ -10,33 +11,39 @@ const AdminLoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
 
   if (!isOpen) return null;
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg("");
     setSuccess(false);
 
-    // Simulate cyber-handshake delay
-    setTimeout(() => {
-      if (email.trim().toLowerCase() === "tvajay0@gmail.com") {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password,
+      });
+
+      if (error) {
+        setErrorMsg(error.message);
+        setLoading(false);
+      } else {
         setSuccess(true);
-        const fakeSession = { user: { email: "tvajay0@gmail.com" } };
-        sessionStorage.setItem("admin_session", JSON.stringify(fakeSession));
+        sessionStorage.setItem("admin_session", JSON.stringify(data.session));
         window.dispatchEvent(new Event("admin_auth_change"));
 
         setTimeout(() => {
-          onLoginSuccess(fakeSession);
+          onLoginSuccess(data.session);
           onClose();
           setEmail("");
           setPassword("");
           setSuccess(false);
           setLoading(false);
         }, 1200);
-      } else {
-        setErrorMsg("Unauthorized administrator coordinates.");
-        setLoading(false);
       }
-    }, 600);
+    } catch (err) {
+      setErrorMsg("Security handshake failed: " + err.message);
+      setLoading(false);
+    }
   };
 
   return (

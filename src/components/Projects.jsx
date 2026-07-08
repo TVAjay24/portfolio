@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import RevealSection from "./RevealSection";
 import { ExternalLink, Trophy, Compass, Edit, Check, X, Star, Plus, Trash2 } from "lucide-react";
+import { supabase } from "../supabase";
 
 const GithubIcon = ({ size = 16, className }) => (
   <svg
@@ -78,11 +79,46 @@ const Projects = ({ isAdmin }) => {
     },
   ];
 
-  // Fetch real-time projects/quests from local storage
-  const fetchProjects = () => {
+  // Fetch real-time projects/quests from Supabase (with fallback)
+  const fetchProjects = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("projects")
+        .select("*")
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const mappedData = data.map((p) => ({
+          id: p.id,
+          name: p.title || "",
+          jp_name: p.jp_name || p.title || "プロジェクト",
+          type: p.type || (p.featured ? "MAIN QUEST" : "SIDE QUEST"),
+          difficulty: p.difficulty || (p.featured ? "HARD" : "MEDIUM"),
+          status: p.status || "IN PROGRESS",
+          description: p.description || "",
+          loot: p.tech_stack || [],
+          github: p.github_url || "#",
+          live: p.live_url || "#",
+          sort_order: p.sort_order || 0,
+        }));
+        setProjectsList(mappedData);
+      } else {
+        // Empty db fallback to localstorage or static
+        loadFallbackProjects();
+      }
+    } catch (err) {
+      console.warn("Supabase fetch projects failed. Loading local fallback:", err);
+      loadFallbackProjects();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadFallbackProjects = () => {
     let localProjs = localStorage.getItem("portfolio_projects");
     if (!localProjs) {
-      // Map initial ones to CMS format
       const cmsFormat = staticFallback.map(p => ({
         id: p.id,
         title: p.name,
@@ -116,10 +152,9 @@ const Projects = ({ isAdmin }) => {
       } else {
         setProjectsList([]);
       }
-    } catch (err) {
+    } catch (e) {
       setProjectsList(staticFallback);
     }
-    setLoading(false);
   };
 
   useEffect(() => {

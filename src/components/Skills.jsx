@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import RevealSection from "./RevealSection";
 import { motion, AnimatePresence } from "framer-motion";
 import { Code, Terminal, Server, Database, Settings, Trash2, Plus, Check, X } from "lucide-react";
+import { supabase } from "../supabase";
 
 const Skills = ({ isAdmin }) => {
   const [activeCat, setActiveCat] = useState("languages");
@@ -35,8 +36,38 @@ const Skills = ({ isAdmin }) => {
     { id: "s9", category: "tools", name: "Git", level: 85, description: "Main version logger and branch management database tool." }
   ];
 
-  // Fetch real-time skills from localStorage
-  useEffect(() => {
+  // Fetch real-time skills from Supabase (with fallback)
+  const fetchSkills = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("skills")
+        .select("*")
+        .order("sort_order", { ascending: true });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const mappedData = data.map((s) => ({
+          id: s.id,
+          category: s.category || "languages",
+          name: s.name,
+          level: (s.proficiency || 4) * 20,
+          description: s.icon_url || "Core logical capability and tech stack module.",
+          sort_order: s.sort_order || 0
+        }));
+        setSkills(mappedData);
+      } else {
+        loadFallbackSkills();
+      }
+    } catch (err) {
+      console.warn("Supabase fetch skills failed. Loading local fallback:", err);
+      loadFallbackSkills();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadFallbackSkills = () => {
     let localSkills = localStorage.getItem("portfolio_skills");
     if (!localSkills) {
       localStorage.setItem("portfolio_skills", JSON.stringify(staticSkills));
@@ -47,7 +78,10 @@ const Skills = ({ isAdmin }) => {
     } catch (err) {
       setSkills(staticSkills);
     }
-    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchSkills();
   }, []);
 
   // Map entries to UI categories

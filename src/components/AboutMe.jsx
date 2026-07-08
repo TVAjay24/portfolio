@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import RevealSection from "./RevealSection";
 import { Cpu, Zap, Edit2, Check, X, Edit, CheckSquare, Plus, Trash2 } from "lucide-react";
+import { supabase } from "../supabase";
 
 const AboutMe = ({ isAdmin }) => {
   const [stats, setStats] = useState({
@@ -78,8 +79,29 @@ const AboutMe = ({ isAdmin }) => {
     biography: "I am a first-year B.E. Computer Science student at Vidyavardhaka College of Engineering (VVCE), Mysuru, affiliated with VTU. Deeply passionate about modern web technologies and full-stack architecture, I also enjoy exploring game development, diving into immersive anime worlds, and building sleek, responsive systems that bridge functional design with engaging storytelling."
   };
 
-  // Fetch real-time RPG stats & biography from localStorage
+  // Fetch real-time RPG stats & biography from Supabase and local cache
   useEffect(() => {
+    const fetchAboutMe = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("about_me")
+          .select("*")
+          .limit(1);
+
+        if (!error && data && data.length > 0) {
+          const entry = data[0];
+          if (entry.bio) setBioText(entry.bio);
+          if (entry.tagline) {
+            setStats(prev => ({ ...prev, class: entry.tagline }));
+          }
+        }
+      } catch (err) {
+        console.warn("Supabase fetch about_me failed. Loading local cache:", err);
+      }
+    };
+
+    fetchAboutMe();
+
     let localProfile = localStorage.getItem("portfolio_profile");
     if (!localProfile) {
       localStorage.setItem("portfolio_profile", JSON.stringify(defaultStats));
@@ -96,8 +118,12 @@ const AboutMe = ({ isAdmin }) => {
     }
     try {
       const parsedStats = JSON.parse(localProfile);
-      setStats(parsedStats);
-      if (parsedStats.biography) setBioText(parsedStats.biography);
+      setStats(prev => {
+        const next = { ...prev, ...parsedStats };
+        // If bioText was set from supabase, don't overwrite it, otherwise use local
+        return next;
+      });
+      if (parsedStats.biography && !bioText) setBioText(parsedStats.biography);
     } catch (err) {
       console.warn("Error reading local stats cache.");
     }

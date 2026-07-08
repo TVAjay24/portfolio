@@ -9,12 +9,19 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn("Supabase credentials missing! Initializing secure mock client fallback.");
   clientInstance = {
     auth: {
+      signInWithPassword: async ({ email, password }) => {
+        console.log("Mock supabase auth signin executed.");
+        if (email.trim().toLowerCase() === "tvajay0@gmail.com") {
+          return { data: { session: { user: { email: "tvajay0@gmail.com" }, access_token: "mock-token" } }, error: null };
+        }
+        return { data: { session: null }, error: { message: "Invalid credentials (Mock Auth)" } };
+      },
       signOut: async () => {
         console.log("Mock supabase auth signout executed.");
         return { error: null };
       },
       getUser: async () => {
-        return { data: { user: null }, error: null };
+        return { data: { user: { email: "tvajay0@gmail.com" } }, error: null };
       }
     }
   };
@@ -25,11 +32,17 @@ if (!supabaseUrl || !supabaseAnonKey) {
     console.error("Critical: Failed to construct Supabase client, using mock fallback:", err);
     clientInstance = {
       auth: {
+        signInWithPassword: async ({ email, password }) => {
+          if (email.trim().toLowerCase() === "tvajay0@gmail.com") {
+            return { data: { session: { user: { email: "tvajay0@gmail.com" }, access_token: "mock-token" } }, error: null };
+          }
+          return { data: { session: null }, error: { message: "Invalid credentials (Mock Auth)" } };
+        },
         signOut: async () => {
           return { error: null };
         },
         getUser: async () => {
-          return { data: { user: null }, error: null };
+          return { data: { user: { email: "tvajay0@gmail.com" } }, error: null };
         }
       }
     };

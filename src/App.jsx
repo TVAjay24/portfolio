@@ -10,7 +10,7 @@ import Education from "./components/Education";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
 import AdminLoginModal from "./components/AdminLoginModal";
-import AdminDashboard from "./components/AdminDashboard";
+import AdminPanel from "./components/AdminPanel";
 
 // Sub-component wrapping the primary portfolio panels
 const MainPortfolio = ({ isAdmin, setModalOpen }) => {
@@ -83,7 +83,7 @@ function App() {
       <div style={{ position: "relative", zIndex: 10 }}>
         <Routes>
           <Route path="/" element={<MainPortfolio isAdmin={isAdmin} setModalOpen={setModalOpen} />} />
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin" element={<AdminPanel />} />
         </Routes>
       </div>
 
