@@ -6,7 +6,6 @@
 -- 1. Clean Slate: Drop existing tables if they exist
 -- --------------------------------------------------------------------
 DROP TABLE IF EXISTS public.contact_messages CASCADE;
-DROP TABLE IF EXISTS public.blog_posts CASCADE;
 DROP TABLE IF EXISTS public.contact_methods CASCADE;
 DROP TABLE IF EXISTS public.education_objectives CASCADE;
 DROP TABLE IF EXISTS public.achievements CASCADE;
@@ -125,19 +124,7 @@ CREATE TABLE public.contact_methods (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- --------------------------------------------------------------------
--- 9. Create blog_posts Table
--- --------------------------------------------------------------------
-CREATE TABLE public.blog_posts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title TEXT NOT NULL,
-    slug TEXT NOT NULL UNIQUE,
-    content TEXT NOT NULL, -- Markdown content
-    cover_image_url TEXT,
-    published_date TEXT,
-    is_draft BOOLEAN NOT NULL DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
+
 
 -- --------------------------------------------------------------------
 -- 10. Create contact_messages Table (Visitor Transmissions)
@@ -206,9 +193,7 @@ VALUES ('01', 'Placeholder objective text. Acquire foundations in memory archite
 INSERT INTO public.contact_methods (title, jp_name, icon_type, line, link, badge, sort_order) 
 VALUES ('YOUR_CONTACT_TITLE', 'ソースコード', 'github', '> HANDLE // YOUR_HANDLE', 'https://github.com/YOUR_GITHUB_USERNAME', 'CONNECTED', 1);
 
--- Blog Posts Placeholder
-INSERT INTO public.blog_posts (title, slug, content, cover_image_url, published_date, is_draft) 
-VALUES ('YOUR_POST_TITLE', 'placeholder-chronicle', '# Welcome to your Chronicles\n\nThis is a placeholder markdown blog post. Access the Admin Cockpit to publish real articles!', 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b', 'MAY 2026', true);
+
 
 -- Contact Messages Placeholder
 INSERT INTO public.contact_messages (name, email, message) 
@@ -226,7 +211,6 @@ ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.achievements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.education_objectives ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contact_methods ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.blog_posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contact_messages ENABLE ROW LEVEL SECURITY;
 
 -- 12a. Public READ (SELECT) Policies for Public Consumption
@@ -237,7 +221,6 @@ CREATE POLICY "Allow public read access for projects" ON public.projects FOR SEL
 CREATE POLICY "Allow public read access for achievements" ON public.achievements FOR SELECT USING (true);
 CREATE POLICY "Allow public read access for education_objectives" ON public.education_objectives FOR SELECT USING (true);
 CREATE POLICY "Allow public read access for contact_methods" ON public.contact_methods FOR SELECT USING (true);
-CREATE POLICY "Allow public read access for blog_posts" ON public.blog_posts FOR SELECT USING (true);
 CREATE POLICY "Allow public read access for contact_messages" ON public.contact_messages FOR SELECT TO authenticated USING (true);
 
 -- 12b. Authenticated WRITE (ALL) Policies for Administration
@@ -248,7 +231,6 @@ CREATE POLICY "Allow authenticated admin writes for projects" ON public.projects
 CREATE POLICY "Allow authenticated admin writes for achievements" ON public.achievements FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated admin writes for education_objectives" ON public.education_objectives FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated admin writes for contact_methods" ON public.contact_methods FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow authenticated admin writes for blog_posts" ON public.blog_posts FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- 12c. Contact Messages Policies (Visitor Transmissions)
 -- Public can only INSERT (send messages)

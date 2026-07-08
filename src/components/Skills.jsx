@@ -36,7 +36,7 @@ const Skills = ({ isAdmin }) => {
     { id: "s9", category: "tools", name: "Git", level: 85, description: "Main version logger and branch management database tool." }
   ];
 
-  // Fetch real-time skills from Supabase (with fallback)
+  // Fetch real-time skills from Supabase
   const fetchSkills = async () => {
     try {
       const { data, error } = await supabase
@@ -44,10 +44,10 @@ const Skills = ({ isAdmin }) => {
         .select("*")
         .order("sort_order", { ascending: true });
 
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        const mappedData = data.map((s) => ({
+      if (error) {
+        console.error(error);
+      } else {
+        const mappedData = (data || []).map((s) => ({
           id: s.id,
           category: s.category || "languages",
           name: s.name,
@@ -56,27 +56,11 @@ const Skills = ({ isAdmin }) => {
           sort_order: s.sort_order || 0
         }));
         setSkills(mappedData);
-      } else {
-        loadFallbackSkills();
       }
     } catch (err) {
-      console.warn("Supabase fetch skills failed. Loading local fallback:", err);
-      loadFallbackSkills();
+      console.error("Supabase fetch skills failed:", err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadFallbackSkills = () => {
-    let localSkills = localStorage.getItem("portfolio_skills");
-    if (!localSkills) {
-      localStorage.setItem("portfolio_skills", JSON.stringify(staticSkills));
-      localSkills = JSON.stringify(staticSkills);
-    }
-    try {
-      setSkills(JSON.parse(localSkills));
-    } catch (err) {
-      setSkills(staticSkills);
     }
   };
 

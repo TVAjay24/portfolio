@@ -7,7 +7,6 @@
 -- 1. Clean Rebuild triggers and tables
 -- --------------------------------------------------------------------
 DROP TABLE IF EXISTS public.projects CASCADE;
-DROP TABLE IF EXISTS public.blog_posts CASCADE;
 DROP TABLE IF EXISTS public.skills CASCADE;
 DROP TABLE IF EXISTS public.about_me CASCADE;
 
@@ -43,27 +42,7 @@ FOR EACH ROW
 EXECUTE FUNCTION update_updated_at();
 
 -- --------------------------------------------------------------------
--- 3. Blog Posts Table
--- --------------------------------------------------------------------
-CREATE TABLE public.blog_posts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title TEXT NOT NULL,
-    slug TEXT UNIQUE NOT NULL,
-    content TEXT,
-    cover_url TEXT,
-    published BOOLEAN DEFAULT false,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-);
-
--- Trigger for blog posts
-CREATE TRIGGER set_blog_posts_updated_at
-BEFORE UPDATE ON public.blog_posts
-FOR EACH ROW
-EXECUTE FUNCTION update_updated_at();
-
--- --------------------------------------------------------------------
--- 4. Skills Table
+-- 3. Skills Table
 -- --------------------------------------------------------------------
 CREATE TABLE public.skills (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -74,10 +53,8 @@ CREATE TABLE public.skills (
     sort_order INT4 DEFAULT 0
 );
 
--- Note: skills table does not have updated_at column per specification, so no trigger is applied.
-
 -- --------------------------------------------------------------------
--- 5. About Me Table
+-- 4. About Me Table
 -- --------------------------------------------------------------------
 CREATE TABLE public.about_me (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -96,20 +73,15 @@ EXECUTE FUNCTION update_updated_at();
 
 
 -- --------------------------------------------------------------------
--- 6. Row Level Security (RLS) Configuration
+-- 5. Row Level Security (RLS) Configuration
 -- --------------------------------------------------------------------
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.blog_posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.skills ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.about_me ENABLE ROW LEVEL SECURITY;
 
 -- Policies for projects
 CREATE POLICY "Public read" ON public.projects FOR SELECT USING (true);
 CREATE POLICY "Admin write" ON public.projects FOR ALL USING (auth.role() = 'authenticated');
-
--- Policies for blog_posts
-CREATE POLICY "Public read" ON public.blog_posts FOR SELECT USING (true);
-CREATE POLICY "Admin write" ON public.blog_posts FOR ALL USING (auth.role() = 'authenticated');
 
 -- Policies for skills
 CREATE POLICY "Public read" ON public.skills FOR SELECT USING (true);
@@ -121,7 +93,7 @@ CREATE POLICY "Admin write" ON public.about_me FOR ALL USING (auth.role() = 'aut
 
 
 -- --------------------------------------------------------------------
--- 7. Seed Initial Data
+-- 6. Seed Initial Data
 -- --------------------------------------------------------------------
 
 -- Seed projects
@@ -142,24 +114,6 @@ VALUES
   'https://github.com/TVAjay24/CampusFinance', 
   '#', 
   false
-);
-
--- Seed blog posts
-INSERT INTO public.blog_posts (title, slug, content, cover_url, published)
-VALUES 
-(
-  'Building an Immersive Gaming HUD Portfolio',
-  'building-gaming-hud-portfolio',
-  'Designing a personal portfolio that stands out in 2026 requires moving beyond simple minimum viable templates. I constructed this immersive, story-rich Gaming HUD / Anime-Inspired console using React and Supabase.',
-  'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800',
-  true
-),
-(
-  'Mastering Row Level Security (RLS) in PostgreSQL',
-  'mastering-supabase-rls-security',
-  'Serverless database architectures are incredibly convenient, but they expose direct network endpoints. With Row Level Security (RLS) active, PostgreSQL evaluates every query against authentication tokens before execution.',
-  'https://images.unsplash.com/photo-1563986768609-322da13575f3?q=80&w=800',
-  true
 );
 
 -- Seed skills

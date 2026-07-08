@@ -78,19 +78,18 @@ const Projects = ({ isAdmin }) => {
       live: "#",
     },
   ];
-
-  // Fetch real-time projects/quests from Supabase (with fallback)
+  // Fetch real-time projects/quests from Supabase
   const fetchProjects = async () => {
     try {
       const { data, error } = await supabase
         .from("projects")
         .select("*")
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: false });
 
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        const mappedData = data.map((p) => ({
+      if (error) {
+        console.error(error);
+      } else {
+        const mappedData = (data || []).map((p) => ({
           id: p.id,
           name: p.title || "",
           jp_name: p.jp_name || p.title || "プロジェクト",
@@ -104,67 +103,17 @@ const Projects = ({ isAdmin }) => {
           sort_order: p.sort_order || 0,
         }));
         setProjectsList(mappedData);
-      } else {
-        // Empty db fallback to localstorage or static
-        loadFallbackProjects();
       }
     } catch (err) {
-      console.warn("Supabase fetch projects failed. Loading local fallback:", err);
-      loadFallbackProjects();
+      console.error("Supabase fetch projects failed:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const loadFallbackProjects = () => {
-    let localProjs = localStorage.getItem("portfolio_projects");
-    if (!localProjs) {
-      const cmsFormat = staticFallback.map(p => ({
-        id: p.id,
-        title: p.name,
-        description: p.description,
-        tech_stack: p.loot,
-        github_url: p.github,
-        live_url: p.live,
-        date: "2025"
-      }));
-      localStorage.setItem("portfolio_projects", JSON.stringify(cmsFormat));
-      localProjs = JSON.stringify(cmsFormat);
-    }
-
-    try {
-      const data = JSON.parse(localProjs);
-      if (data && data.length > 0) {
-        const mappedData = data.map((p) => ({
-          id: p.id,
-          name: p.title || p.name || "",
-          jp_name: p.jp_name || p.title || "プロジェクト",
-          type: p.type || "MAIN QUEST",
-          difficulty: p.difficulty || "MEDIUM",
-          status: p.status || "IN PROGRESS",
-          description: p.description || "",
-          loot: p.tech_stack || p.loot || [],
-          github: p.github_url || p.github || "#",
-          live: p.live_url || p.live || "#",
-          sort_order: p.sort_order || 0,
-        }));
-        setProjectsList(mappedData);
-      } else {
-        setProjectsList([]);
-      }
-    } catch (e) {
-      setProjectsList(staticFallback);
-    }
-  };
-
   useEffect(() => {
     fetchProjects();
-
-    // Event listener to sync updates from the admin cockpit tab in real time
-    window.addEventListener("storage", fetchProjects);
-    return () => window.removeEventListener("storage", fetchProjects);
   }, []);
-
   const getProjects = () => {
     return projectsList;
   };

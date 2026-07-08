@@ -460,64 +460,7 @@ app.delete('/api/contact/:id', requireAdmin, async (req, res) => {
   }
 });
 
-// ==========================================
-// 8. CHRONICLES (BLOG POSTS) ENDPOINTS
-// ==========================================
-app.get('/api/blog', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('blog_posts')
-      .select('*')
-      .order('published_date', { ascending: false })
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
-app.post('/api/blog', requireAdmin, async (req, res) => {
-  try {
-    const { title, slug, content, cover_image_url, published_date, is_draft } = req.body;
-    const { data, error } = await supabaseAdmin
-      .from('blog_posts')
-      .insert([{ title, slug, content, cover_image_url, published_date, is_draft: !!is_draft }])
-      .select();
-    handleWriteResponse(res, data, error, 201);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.put('/api/blog/:id', requireAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { title, slug, content, cover_image_url, published_date, is_draft } = req.body;
-    const { data, error } = await supabaseAdmin
-      .from('blog_posts')
-      .update({ title, slug, content, cover_image_url, published_date, is_draft: !!is_draft })
-      .eq('id', id)
-      .select();
-    handleWriteResponse(res, data, error);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.delete('/api/blog/:id', requireAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { error } = await supabaseAdmin
-      .from('blog_posts')
-      .delete()
-      .eq('id', id);
-    if (error) throw error;
-    res.json({ success: true, message: 'Chronicle blog post node dissolved.' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 // ==========================================
 // 9. VISITOR TRANSMISSIONS (CONTACT MESSAGES)

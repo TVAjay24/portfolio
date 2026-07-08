@@ -354,8 +354,10 @@ const Contact = ({ isAdmin }) => {
                 {/* Title & JP Subtitle */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <label style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>UPLINK TITLE</label>
+                    <label htmlFor="uplink_title" style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>UPLINK TITLE</label>
                     <input
+                      id="uplink_title"
+                      name="uplink_title"
                       type="text"
                       required
                       value={newContact.title}
@@ -365,8 +367,10 @@ const Contact = ({ isAdmin }) => {
                     />
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <label style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>JAPANESE TRANSLATION</label>
+                    <label htmlFor="uplink_jp_name" style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>JAPANESE TRANSLATION</label>
                     <input
+                      id="uplink_jp_name"
+                      name="uplink_jp_name"
                       type="text"
                       value={newContact.jp_name}
                       onChange={(e) => setNewContact({ ...newContact, jp_name: e.target.value })}
@@ -379,8 +383,10 @@ const Contact = ({ isAdmin }) => {
                 {/* Parameter line & Badge status */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <label style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>PARAMETER LINE</label>
+                    <label htmlFor="uplink_line" style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>PARAMETER LINE</label>
                     <input
+                      id="uplink_line"
+                      name="uplink_line"
                       type="text"
                       required
                       value={newContact.line}
@@ -390,8 +396,10 @@ const Contact = ({ isAdmin }) => {
                     />
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <label style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>UPLINK BADGE STATUS</label>
+                    <label htmlFor="uplink_badge" style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>UPLINK BADGE STATUS</label>
                     <input
+                      id="uplink_badge"
+                      name="uplink_badge"
                       type="text"
                       required
                       value={newContact.badge}
@@ -405,8 +413,10 @@ const Contact = ({ isAdmin }) => {
                 {/* Target link path & Icon Type dropdown */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <label style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>TARGET UPLINK PATH</label>
+                    <label htmlFor="uplink_link" style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>TARGET UPLINK PATH</label>
                     <input
+                      id="uplink_link"
+                      name="uplink_link"
                       type="text"
                       required
                       value={newContact.link}
@@ -482,8 +492,10 @@ const Contact = ({ isAdmin }) => {
 
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                     <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                      <label style={{ fontSize: "0.65rem", color: "var(--text-secondary)" }}>UPLINK TITLE</label>
+                      <label htmlFor={`edit_uplink_title_${card.id}`} style={{ fontSize: "0.65rem", color: "var(--text-secondary)" }}>UPLINK TITLE</label>
                       <input
+                        id={`edit_uplink_title_${card.id}`}
+                        name="uplink_title"
                         type="text"
                         value={cardForm.title}
                         onChange={(e) => setCardForm({ ...cardForm, title: e.target.value })}
@@ -491,8 +503,10 @@ const Contact = ({ isAdmin }) => {
                       />
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                      <label style={{ fontSize: "0.65rem", color: "var(--text-secondary)" }}>JAPANESE TRANSLATION</label>
+                      <label htmlFor={`edit_uplink_jp_${card.id}`} style={{ fontSize: "0.65rem", color: "var(--text-secondary)" }}>JAPANESE TRANSLATION</label>
                       <input
+                        id={`edit_uplink_jp_${card.id}`}
+                        name="uplink_jp_name"
                         type="text"
                         value={cardForm.jp_name}
                         onChange={(e) => setCardForm({ ...cardForm, jp_name: e.target.value })}
@@ -503,8 +517,10 @@ const Contact = ({ isAdmin }) => {
 
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                     <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                      <label style={{ fontSize: "0.65rem", color: "var(--text-secondary)" }}>PARAMETER LINE (e.g. &gt; HANDLE // ...)</label>
+                      <label htmlFor={`edit_uplink_line_${card.id}`} style={{ fontSize: "0.65rem", color: "var(--text-secondary)" }}>PARAMETER LINE (e.g. &gt; HANDLE // ...)</label>
                       <input
+                        id={`edit_uplink_line_${card.id}`}
+                        name="uplink_line"
                         type="text"
                         value={cardForm.line}
                         onChange={(e) => setCardForm({ ...cardForm, line: e.target.value })}
@@ -512,8 +528,10 @@ const Contact = ({ isAdmin }) => {
                       />
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                      <label style={{ fontSize: "0.65rem", color: "var(--text-secondary)" }}>UPLINK BADGE STATUS</label>
+                      <label htmlFor={`edit_uplink_badge_${card.id}`} style={{ fontSize: "0.65rem", color: "var(--text-secondary)" }}>UPLINK BADGE STATUS</label>
                       <input
+                        id={`edit_uplink_badge_${card.id}`}
+                        name="uplink_badge"
                         type="text"
                         value={cardForm.badge}
                         onChange={(e) => setCardForm({ ...cardForm, badge: e.target.value })}
@@ -523,8 +541,10 @@ const Contact = ({ isAdmin }) => {
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                    <label style={{ fontSize: "0.65rem", color: "var(--text-secondary)" }}>TARGET UPLINK PATH (URL / email / tel)</label>
+                    <label htmlFor={`edit_uplink_link_${card.id}`} style={{ fontSize: "0.65rem", color: "var(--text-secondary)" }}>TARGET UPLINK PATH (URL / email / tel)</label>
                     <input
+                      id={`edit_uplink_link_${card.id}`}
+                      name="uplink_link"
                       type="text"
                       value={cardForm.link}
                       onChange={(e) => setCardForm({ ...cardForm, link: e.target.value })}
@@ -718,8 +738,10 @@ const Contact = ({ isAdmin }) => {
         <form onSubmit={handleTransmitSignal} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", flexWrap: "wrap" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontFamily: "var(--font-hud)", fontSize: "0.7rem", color: "var(--accent-blue)" }}>OPERATOR IDENTIFIER (NAME)</label>
+              <label htmlFor="name" style={{ fontFamily: "var(--font-hud)", fontSize: "0.7rem", color: "var(--accent-blue)" }}>OPERATOR IDENTIFIER (NAME)</label>
               <input
+                id="name"
+                name="name"
                 type="text"
                 required
                 value={msgForm.name}
@@ -730,8 +752,10 @@ const Contact = ({ isAdmin }) => {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontFamily: "var(--font-hud)", fontSize: "0.7rem", color: "var(--accent-blue)" }}>SIGNAL COM ADDRESS (EMAIL)</label>
+              <label htmlFor="email" style={{ fontFamily: "var(--font-hud)", fontSize: "0.7rem", color: "var(--accent-blue)" }}>SIGNAL COM ADDRESS (EMAIL)</label>
               <input
+                id="email"
+                name="email"
                 type="email"
                 required
                 value={msgForm.email}
@@ -743,8 +767,10 @@ const Contact = ({ isAdmin }) => {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <label style={{ fontFamily: "var(--font-hud)", fontSize: "0.7rem", color: "var(--accent-blue)" }}>SIGNAL MESSAGE PAYLOAD (TRANSMISSION)</label>
+            <label htmlFor="message" style={{ fontFamily: "var(--font-hud)", fontSize: "0.7rem", color: "var(--accent-blue)" }}>SIGNAL MESSAGE PAYLOAD (TRANSMISSION)</label>
             <textarea
+              id="message"
+              name="message"
               required
               rows="4"
               value={msgForm.message}

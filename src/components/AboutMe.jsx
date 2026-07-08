@@ -86,17 +86,18 @@ const AboutMe = ({ isAdmin }) => {
         const { data, error } = await supabase
           .from("about_me")
           .select("*")
-          .limit(1);
+          .single();
 
-        if (!error && data && data.length > 0) {
-          const entry = data[0];
-          if (entry.bio) setBioText(entry.bio);
-          if (entry.tagline) {
-            setStats(prev => ({ ...prev, class: entry.tagline }));
+        if (error) {
+          console.error(error);
+        } else if (data) {
+          if (data.bio) setBioText(data.bio);
+          if (data.tagline) {
+            setStats(prev => ({ ...prev, class: data.tagline }));
           }
         }
       } catch (err) {
-        console.warn("Supabase fetch about_me failed. Loading local cache:", err);
+        console.error("Supabase fetch about_me failed:", err);
       }
     };
 

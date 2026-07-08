@@ -10,20 +10,16 @@ const AdminPanel = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [activeTab, setActiveTab] = useState("projects"); // "projects", "blog", "skills", "about"
+  const [activeTab, setActiveTab] = useState("projects"); // "projects", "skills", "about"
 
   // Data lists
   const [projects, setProjects] = useState([]);
-  const [blogs, setBlogs] = useState([]);
   const [skills, setSkills] = useState([]);
   const [aboutRecord, setAboutRecord] = useState(null);
 
   // Form states
   const [projectForm, setProjectForm] = useState({ id: null, title: "", description: "", tech_stack: "", live_url: "", github_url: "", thumbnail_url: "", featured: false });
   const [projectFormOpen, setProjectFormOpen] = useState(false);
-
-  const [blogForm, setBlogForm] = useState({ id: null, title: "", slug: "", content: "", cover_url: "", published: false });
-  const [blogFormOpen, setBlogFormOpen] = useState(false);
 
   const [skillForm, setSkillForm] = useState({ id: null, name: "", category: "languages", icon_url: "", proficiency: 4, sort_order: 0 });
   const [skillFormOpen, setSkillFormOpen] = useState(false);
@@ -55,7 +51,6 @@ const AdminPanel = () => {
   useEffect(() => {
     if (session) {
       fetchProjectsData();
-      fetchBlogsData();
       fetchSkillsData();
       fetchAboutData();
     }
@@ -180,78 +175,7 @@ const AdminPanel = () => {
     setProjects(prev => prev.filter(p => p.id !== id));
   };
 
-  // ====================================================================
-  // 2. BLOG CRUD
-  // ====================================================================
-  const fetchBlogsData = async () => {
-    const { data, error } = await supabase
-      .from("blog_posts")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (!error && data) {
-      setBlogs(data);
-    }
-  };
 
-  const handleSaveBlog = async (e) => {
-    e.preventDefault();
-    const formData = {
-      title: blogForm.title.trim(),
-      slug: blogForm.slug.trim(),
-      content: blogForm.content.trim(),
-      cover_url: blogForm.cover_url.trim() || "",
-      published: blogForm.published,
-    };
-
-    if (blogForm.id) {
-      // UPDATE
-      const { data, error } = await supabase
-        .from("blog_posts")
-        .update({ ...formData, updated_at: new Date().toISOString() })
-        .eq("id", blogForm.id)
-        .select();
-      if (error) {
-        console.error(error);
-        alert(error.message);
-        return;
-      }
-      if (data) {
-        setBlogs(prev => prev.map(b => b.id === blogForm.id ? data[0] : b));
-      }
-    } else {
-      // INSERT
-      const { data, error } = await supabase
-        .from("blog_posts")
-        .insert({ ...formData })
-        .select();
-      if (error) {
-        console.error(error);
-        alert(error.message);
-        return;
-      }
-      if (data) {
-        setBlogs(prev => [data[0], ...prev]);
-      }
-    }
-
-    setBlogFormOpen(false);
-    setBlogForm({ id: null, title: "", slug: "", content: "", cover_url: "", published: false });
-  };
-
-  const handleDeleteBlog = async (id, title) => {
-    if (!window.confirm(`DISSOLVE CHRONICLE: "${title}"?`)) return;
-
-    const { error } = await supabase
-      .from("blog_posts")
-      .delete()
-      .eq("id", id);
-    if (error) {
-      console.error(error);
-      alert(error.message);
-      return;
-    }
-    setBlogs(prev => prev.filter(b => b.id !== id));
-  };
 
   // ====================================================================
   // 3. SKILLS CRUD
@@ -484,20 +408,13 @@ const AdminPanel = () => {
         </div>
 
         {/* Tab Controls */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "32px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "32px" }}>
           <button
             onClick={() => { setActiveTab("projects"); setProjectFormOpen(false); }}
             className={`hud-btn ${activeTab === "projects" ? "" : "hud-btn-purple"}`}
             style={{ padding: "12px 6px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", background: activeTab === "projects" ? "var(--accent-cyan)" : "transparent", borderColor: activeTab === "projects" ? "var(--accent-cyan)" : "rgba(189,0,255,0.3)", color: activeTab === "projects" ? "var(--bg-darker)" : "#fff" }}
           >
             <Award size={14} /> PROJECTS ({projects.length})
-          </button>
-          <button
-            onClick={() => { setActiveTab("blog"); setBlogFormOpen(false); }}
-            className={`hud-btn ${activeTab === "blog" ? "" : "hud-btn-purple"}`}
-            style={{ padding: "12px 6px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", background: activeTab === "blog" ? "var(--accent-cyan)" : "transparent", borderColor: activeTab === "blog" ? "var(--accent-cyan)" : "rgba(189,0,255,0.3)", color: activeTab === "blog" ? "var(--bg-darker)" : "#fff" }}
-          >
-            <BookOpen size={14} /> BLOG ({blogs.length})
           </button>
           <button
             onClick={() => { setActiveTab("skills"); setSkillFormOpen(false); }}
@@ -638,116 +555,7 @@ const AdminPanel = () => {
           </div>
         )}
 
-        {/* ====================================================================
-            BLOG POSTS TAB
-            ==================================================================== */}
-        {activeTab === "blog" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-            {!blogFormOpen ? (
-              <>
-                <button onClick={() => {
-                  setBlogForm({ id: null, title: "", slug: "", content: "", cover_url: "", published: false });
-                  setBlogFormOpen(true);
-                }} className="hud-btn" style={{ padding: "10px 20px", display: "flex", alignItems: "center", gap: "8px", alignSelf: "flex-start" }}>
-                  <Plus size={14} /> TRANSMIT NEW CHRONICLE NODE
-                </button>
 
-                <div className="hud-panel cyber-scanlines" style={{ padding: "0", overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.85rem" }}>
-                    <thead>
-                      <tr style={{ borderBottom: "1px solid rgba(0,210,255,0.2)", background: "rgba(0,210,255,0.03)" }}>
-                        <th style={{ padding: "16px", fontFamily: "var(--font-hud)" }}>TITLE</th>
-                        <th style={{ padding: "16px", fontFamily: "var(--font-hud)" }}>SLUG</th>
-                        <th style={{ padding: "16px", fontFamily: "var(--font-hud)" }}>STATUS</th>
-                        <th style={{ padding: "16px", fontFamily: "var(--font-hud)", textAlign: "right" }}>COORDINATES</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {blogs.length === 0 ? (
-                        <tr>
-                          <td colSpan="4" style={{ padding: "30px", textAlign: "center", color: "var(--text-muted)" }}>[ CHRONICLES DATABANK VACANT ]</td>
-                        </tr>
-                      ) : (
-                        blogs.map((b) => (
-                          <tr key={b.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                            <td style={{ padding: "16px", fontWeight: "700" }}>{b.title}</td>
-                            <td style={{ padding: "16px", color: "var(--text-secondary)" }}>{b.slug}</td>
-                            <td style={{ padding: "16px" }}>{b.published ? "PUBLISHED" : "DRAFT"}</td>
-                            <td style={{ padding: "16px", textAlign: "right" }}>
-                              <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-                                <button onClick={() => {
-                                  setBlogForm({
-                                    id: b.id,
-                                    title: b.title,
-                                    slug: b.slug,
-                                    content: b.content || "",
-                                    cover_url: b.cover_url || "",
-                                    published: !!b.published
-                                  });
-                                  setBlogFormOpen(true);
-                                }} className="hud-btn" style={{ padding: "4px 8px", fontSize: "0.6rem" }}>
-                                  <Edit size={10} /> EDIT
-                                </button>
-                                <button onClick={() => handleDeleteBlog(b.id, b.title)} className="hud-btn hud-btn-purple" style={{ padding: "4px 8px", fontSize: "0.6rem", color: "#ff4a4a", borderColor: "#ff4a4a" }}>
-                                  <Trash2 size={10} /> DISSOLVE
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            ) : (
-              // Add / Edit Blog Form
-              <form onSubmit={handleSaveBlog} className="hud-panel cyber-scanlines glitch-border" style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "700px", margin: "0 auto", width: "100%" }}>
-                <div className="hud-panel-bottom" />
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(0,210,255,0.2)", paddingBottom: "8px" }}>
-                  <span style={{ fontFamily: "var(--font-hud)", color: "var(--accent-cyan)", fontWeight: "700" }}>
-                    {blogForm.id ? `[ EDIT_CHRONICLE // ${blogForm.title.toUpperCase()} ]` : "[ CHRONICLE_INJECTION_SHELL ]"}
-                  </span>
-                  <X size={14} style={{ cursor: "pointer" }} onClick={() => setBlogFormOpen(false)} />
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <label style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>CHRONICLE TITLE</label>
-                    <input type="text" required value={blogForm.title} onChange={(e) => setBlogForm({ ...blogForm, title: e.target.value })} style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(0,210,255,0.2)", color: "#fff", padding: "8px", fontSize: "0.8rem", outline: "none" }} />
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <label style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>SLUG PATHWAY (UNIQUE)</label>
-                    <input type="text" required value={blogForm.slug} onChange={(e) => setBlogForm({ ...blogForm, slug: e.target.value })} placeholder="building-gaming-hud-portfolio" style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(0,210,255,0.2)", color: "#fff", padding: "8px", fontSize: "0.8rem", outline: "none" }} />
-                  </div>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <label style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>COVER IMAGE URL</label>
-                    <input type="text" value={blogForm.cover_url} onChange={(e) => setBlogForm({ ...blogForm, cover_url: e.target.value })} placeholder="https://images.unsplash.com/..." style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(0,210,255,0.2)", color: "#fff", padding: "8px", fontSize: "0.8rem", outline: "none" }} />
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px", justifyContent: "center" }}>
-                    <label style={{ fontSize: "0.7rem", color: "var(--text-secondary)", marginBottom: "4px" }}>TRANSMISSION STATUS</label>
-                    <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
-                      <input type="checkbox" checked={blogForm.published} onChange={(e) => setBlogForm({ ...blogForm, published: e.target.checked })} style={{ accentColor: "var(--accent-cyan)" }} />
-                      <span style={{ fontSize: "0.8rem" }}>PUBLISH TO PORTAL</span>
-                    </label>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <label style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>MARKDOWN LOG PAYLOAD</label>
-                  <textarea required value={blogForm.content} onChange={(e) => setBlogForm({ ...blogForm, content: e.target.value })} rows="10" placeholder="# Dynamic chronicles payload" style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(0,210,255,0.2)", color: "#fff", padding: "8px", fontSize: "0.8rem", resize: "vertical", outline: "none", fontFamily: "monospace" }} />
-                </div>
-
-                <button type="submit" className="hud-btn" style={{ padding: "10px 20px", fontSize: "0.75rem", alignSelf: "flex-start", marginTop: "8px" }}>
-                  COMPILE_AND_TRANSMIT // BLOG
-                </button>
-              </form>
-            )}
-          </div>
-        )}
 
         {/* ====================================================================
             SKILLS TAB
