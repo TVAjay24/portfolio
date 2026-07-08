@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Terminal, Lock, Mail, ShieldAlert, Check, Plus, Trash2, Edit, LogOut, ArrowLeft, X, BookOpen, Layers, User, Award } from "lucide-react";
+import { Terminal, Lock, Mail, ShieldAlert, Check, Plus, Trash2, Edit, LogOut, ArrowLeft, X, Layers, User, Award } from "lucide-react";
 import { supabase } from "../supabase";
 
 const AdminPanel = () => {
