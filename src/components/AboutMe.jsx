@@ -383,66 +383,6 @@ const AboutMe = ({ isAdmin }) => {
             {renderStatRow("CHARACTER", "character_name")}
             {renderStatRow("CLASS", "class")}
             {renderStatRow("GUILD", "guild")}
-
-            {/* RPG Bars - HP */}
-            <div style={{ marginTop: "8px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.7rem", marginBottom: "4px" }}>
-                <span style={{ color: "var(--accent-cyan)", display: "flex", alignItems: "center", gap: "2px" }}>
-                  <Zap size={10} /> HP (STAMINA)
-                </span>
-                {editingField === "hp" ? (
-                  <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                    <input
-                      type="number"
-                      value={editValue}
-                      onChange={(e) => setEditValue(e.target.value)}
-                      style={{ width: "50px", background: "rgba(0,0,0,0.5)", border: "1px solid var(--accent-cyan)", color: "#fff", textAlign: "right", fontSize: "0.65rem", padding: "0 2px" }}
-                    />
-                    <button onClick={() => saveStatUpdate("hp_current", parseInt(editValue))} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--accent-cyan)" }}><Check size={10} /></button>
-                  </div>
-                ) : (
-                  <span style={{ color: "#fff", display: "flex", alignItems: "center", gap: "4px" }}>
-                    {stats.hp_current} / {stats.hp_max}
-                    {isAdmin && (
-                      <Edit2 size={8} style={{ color: "var(--text-muted)", cursor: "pointer" }} onClick={() => handleEditClick("hp", stats.hp_current)} />
-                    )}
-                  </span>
-                )}
-              </div>
-              <div className="hud-bar-container">
-                <div className="hud-bar-fill" style={{ width: `${(stats.hp_current / stats.hp_max) * 100}%` }}></div>
-              </div>
-            </div>
-
-            {/* RPG Bars - MP */}
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.7rem", marginBottom: "4px" }}>
-                <span style={{ color: "var(--accent-purple)", display: "flex", alignItems: "center", gap: "2px" }}>
-                  <Zap size={10} /> MP (MANA / LOGIC)
-                </span>
-                {editingField === "mp" ? (
-                  <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                    <input
-                      type="number"
-                      value={editValue}
-                      onChange={(e) => setEditValue(e.target.value)}
-                      style={{ width: "50px", background: "rgba(0,0,0,0.5)", border: "1px solid var(--accent-purple)", color: "#fff", textAlign: "right", fontSize: "0.65rem", padding: "0 2px" }}
-                    />
-                    <button onClick={() => saveStatUpdate("mp_current", parseInt(editValue))} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--accent-purple)" }}><Check size={10} /></button>
-                  </div>
-                ) : (
-                  <span style={{ color: "#fff", display: "flex", alignItems: "center", gap: "4px" }}>
-                    {stats.mp_current} / {stats.mp_max}
-                    {isAdmin && (
-                      <Edit2 size={8} style={{ color: "var(--text-muted)", cursor: "pointer" }} onClick={() => handleEditClick("mp", stats.mp_current)} />
-                    )}
-                  </span>
-                )}
-              </div>
-              <div className="hud-bar-container">
-                <div className="hud-bar-fill hud-bar-fill-purple" style={{ width: `${(stats.mp_current / stats.mp_max) * 100}%` }}></div>
-              </div>
-            </div>
           </div>
         </div>
 

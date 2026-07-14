@@ -5,15 +5,7 @@ import { supabase } from "../supabase";
 const Navbar = ({ isAdmin, onAdminTrigger }) => {
   const [activeSec, setActiveSec] = useState("hero");
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [xp, setXp] = useState(0);
 
-  // Animate XP loading bar on load
-  useEffect(() => {
-    const interval = setTimeout(() => {
-      setXp(92);
-    }, 500);
-    return () => clearTimeout(interval);
-  }, []);
 
   const navItems = [
     { id: "hero", name: "HOME", num: "01" },
@@ -96,6 +88,8 @@ const Navbar = ({ isAdmin, onAdminTrigger }) => {
         {/* Left Side: Terminal Name */}
         <div
           onClick={() => handleNavClick("hero")}
+          onDoubleClick={onAdminTrigger}
+          title="Double click to access secure administrative cockpit console"
           style={{
             display: "flex",
             alignItems: "center",
@@ -106,15 +100,22 @@ const Navbar = ({ isAdmin, onAdminTrigger }) => {
             fontWeight: "700",
             letterSpacing: "1px",
             color: "var(--text-primary)",
+            userSelect: "none",
           }}
         >
           <Terminal size={18} className="text-glow-blue" style={{ color: "var(--accent-blue)" }} />
           <span style={{ color: "var(--accent-blue)" }}>T V AJAY</span>
           <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>//</span>
-          <span style={{ fontSize: "0.8rem", color: "var(--accent-purple)", letterSpacing: "2px" }}>HUD_v1.0</span>
+          {isAdmin ? (
+            <span style={{ fontSize: "0.8rem", color: "var(--accent-purple)", letterSpacing: "2px", display: "flex", alignItems: "center", gap: "4px" }}>
+              <Shield size={12} style={{ filter: "drop-shadow(0 0 4px var(--accent-purple))" }} /> SYS_ADMIN
+            </span>
+          ) : (
+            <span style={{ fontSize: "0.8rem", color: "var(--accent-purple)", letterSpacing: "2px" }}>HUD_v1.0</span>
+          )}
         </div>
 
-        {/* Center: RPG Level & XP Bar - Clickable HUD button with active hover effects */}
+        {/* Center: RPG Telemetry Status */}
         <div
           className="xp-hud-container"
           style={{
@@ -123,46 +124,12 @@ const Navbar = ({ isAdmin, onAdminTrigger }) => {
             gap: "12px",
             fontFamily: "var(--font-hud)",
             fontSize: "0.75rem",
-            cursor: "pointer",
             padding: "6px 12px",
             border: "1px dashed transparent",
             borderRadius: "4px",
             transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = isAdmin ? "rgba(189, 0, 255, 0.4)" : "rgba(0, 210, 255, 0.4)";
-            e.currentTarget.style.background = isAdmin ? "rgba(189, 0, 255, 0.05)" : "rgba(0, 210, 255, 0.05)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "transparent";
-            e.currentTarget.style.background = "transparent";
-          }}
-          onClick={onAdminTrigger}
-          title="Click to access secure administrative cockpit console"
         >
-          {isAdmin && (
-            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              <Shield size={14} style={{ color: "var(--accent-purple)", filter: "drop-shadow(0 0 4px var(--accent-purple))" }} />
-              <span style={{ color: "var(--accent-purple)" }}>
-                SYS_ADMIN
-              </span>
-            </div>
-          )}
-          <div style={{ width: "120px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px", color: "var(--text-secondary)" }}>
-              <span>XP BAR</span>
-              <span>{xp}%</span>
-            </div>
-            <div className="hud-bar-container">
-              <div
-                className="hud-bar-fill"
-                style={{
-                  width: `${xp}%`,
-                  background: isAdmin ? "linear-gradient(90deg, var(--accent-purple), var(--accent-blue))" : "linear-gradient(90deg, var(--accent-blue), var(--accent-cyan))"
-                }}
-              ></div>
-            </div>
-          </div>
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
             <Activity size={12} style={{ color: isAdmin ? "var(--accent-purple)" : "var(--accent-cyan)", animation: "pulse 2s infinite" }} />
             <span style={{ color: "var(--text-secondary)" }}>
