@@ -381,7 +381,6 @@ const AboutMe = ({ isAdmin }) => {
           {/* Character Stats */}
           <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontFamily: "var(--font-hud)" }}>
             {renderStatRow("CHARACTER", "character_name")}
-            {renderStatRow("PLAYER RANK", "level", "number")}
             {renderStatRow("CLASS", "class")}
             {renderStatRow("GUILD", "guild")}
 

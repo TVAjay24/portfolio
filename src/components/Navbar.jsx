@@ -140,12 +140,14 @@ const Navbar = ({ isAdmin, onAdminTrigger }) => {
           onClick={onAdminTrigger}
           title="Click to access secure administrative cockpit console"
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <Shield size={14} style={{ color: isAdmin ? "var(--accent-purple)" : "var(--accent-cyan)", filter: isAdmin ? "drop-shadow(0 0 4px var(--accent-purple))" : "none" }} />
-            <span style={{ color: isAdmin ? "var(--accent-purple)" : "var(--accent-cyan)" }}>
-              {isAdmin ? "SYS_ADMIN" : "LV.26"}
-            </span>
-          </div>
+          {isAdmin && (
+            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+              <Shield size={14} style={{ color: "var(--accent-purple)", filter: "drop-shadow(0 0 4px var(--accent-purple))" }} />
+              <span style={{ color: "var(--accent-purple)" }}>
+                SYS_ADMIN
+              </span>
+            </div>
+          )}
           <div style={{ width: "120px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px", color: "var(--text-secondary)" }}>
               <span>XP BAR</span>
